@@ -1,3 +1,16 @@
+// dep: tests/sources/stdlib/modules/transaction.move
+// dep: tests/sources/stdlib/modules/libra_system.move
+// dep: tests/sources/stdlib/modules/libra_account.move
+// dep: tests/sources/stdlib/modules/hash.move
+// dep: tests/sources/stdlib/modules/lbr.move
+// dep: tests/sources/stdlib/modules/lcs.move
+// dep: tests/sources/stdlib/modules/libra.move
+// dep: tests/sources/stdlib/modules/libra_transaction_timeout.move
+// dep: tests/sources/stdlib/modules/vector.move
+// dep: tests/sources/stdlib/modules/libra_time.move
+// dep: tests/sources/stdlib/modules/validator_config.move
+// no-verify
+
 address 0x0:
 module LibraConfig {
     use 0x0::Transaction;
@@ -28,9 +41,5 @@ module LibraConfig {
 
         move_to_sender(T{ payload });
         LibraSystem::reconfigure();
-    }
-
-    public fun read_config<Config: copyable>(): Config acquires T {
-        *&borrow_global<T<Config>>(0xA550C18).payload
     }
 }

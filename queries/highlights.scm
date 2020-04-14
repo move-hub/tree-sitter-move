@@ -24,6 +24,11 @@
 (num_literal) @number
 (byte_string_literal) @string
 
+(spec_condition
+  (spec_cond) @keyword)
+(spec_invariant
+  (invariant_op) @keyword)
+
 (fun_keyword) @keyword
 (address_keyword)  @keyword
 (module_keyword) @keyword
@@ -47,3 +52,6 @@
 (abort_keyword)  @keyword
 (continue_keyword)  @keyword
 (break_keyword)  @keyword
+
+(spec_keyword) @keyword
+(invariant_keyword) @keyword

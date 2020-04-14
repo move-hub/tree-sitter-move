@@ -1,3 +1,15 @@
+// dep: tests/sources/stdlib/modules/libra_account.move
+// dep: tests/sources/stdlib/modules/hash.move
+// dep: tests/sources/stdlib/modules/lbr.move
+// dep: tests/sources/stdlib/modules/lcs.move
+// dep: tests/sources/stdlib/modules/libra.move
+// dep: tests/sources/stdlib/modules/libra_transaction_timeout.move
+// dep: tests/sources/stdlib/modules/transaction.move
+// dep: tests/sources/stdlib/modules/vector.move
+// dep: tests/sources/stdlib/modules/libra_time.move
+// dep: tests/sources/stdlib/modules/validator_config.move
+// no-verify
+
 address 0x0:
 
 module LibraSystem {
@@ -16,7 +28,8 @@ module LibraSystem {
     }
 
     struct ValidatorSetChangeEvent {
-        last_reconfiguration_time: u64,
+        scheme: u8,
+        new_validator_set: vector<ValidatorInfo>,
     }
 
     resource struct ValidatorSet {
@@ -363,7 +376,8 @@ module LibraSystem {
        LibraAccount::emit_event<ValidatorSetChangeEvent>(
            &mut validator_set_ref.change_events,
            ValidatorSetChangeEvent {
-               last_reconfiguration_time: validator_set_ref.last_reconfiguration_time,
+               scheme: validator_set_ref.scheme,
+               new_validator_set: *&validator_set_ref.validators,
            },
        );
    }

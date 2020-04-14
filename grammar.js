@@ -96,6 +96,7 @@ module.exports = grammar({
         repeat(choice(
           $._function_definition,
           $._struct_definition,
+          $.spec_block,
         )),
         '}'
       );
@@ -162,6 +163,76 @@ module.exports = grammar({
     resource_accquires: $ => seq(
       $.acquires_keyword, sepBy1(',', $.struct_identity)
     ),
+
+    //// Spec block start
+    spec_block: $ => seq(
+      $.spec_keyword,
+      optional(choice(
+        seq($.fun_keyword, $._function_identifier),
+        seq($.struct_keyword, $._struct_identifier),
+        $.module_keyword,
+      )),
+      field('body', $.spec_body)
+    ),
+
+    spec_body: $ => seq(
+      '{',
+      repeat($.use_decl),
+      repeat($._spec_block_memeber),
+      '}'
+    ),
+    _spec_block_memeber: $ => choice(
+      $.spec_invariant,
+      $._spec_function,
+      $.spec_condition,
+      $.spec_variable
+    ),
+    spec_condition: $ => seq(
+      alias(
+        choice('assert', 'assume', 'decreases', 'aborts_if', 'ensures', 'requires'),
+        $.spec_cond,
+      ),
+      $._expression,
+      ';'
+    ),
+    spec_invariant: $ => seq(
+      $.invariant_keyword,
+      optional(alias(choice('update', 'pack', 'unpack'), $.invariant_op)),
+      $._expression,
+      ';'
+    ),
+    spec_variable: $ => seq(
+      $.global_keyword,
+      field('name', $._variable_identifier),
+      ':',
+      field('type', $._type),
+      ';'
+    ),
+
+    _spec_function: $ => choice(
+      $.native_spec_function,
+      $.usual_spec_function
+    ),
+
+    native_spec_function: $ => seq(
+      $.native_keyword,
+      $._spec_function_signature,
+      ';'
+    ),
+    usual_spec_function: $ => seq(
+      $._spec_function_signature,
+      field('body', $.block)
+    ),
+    _spec_function_signature: $ => seq(
+      optional($.define_keyword),
+      field('name', $._function_identifier),
+      optional(field('type_params', $.type_parameters)),
+      field('params', $.func_params),
+      seq(':', field('return_type', $._type)),
+    ),
+
+    //// Spec block end
+
 
     // move type grammar
     _type: $ => choice(
@@ -279,7 +350,7 @@ module.exports = grammar({
     ),
     // move or copy
     move_or_copy_expression: $ => prec(PREC.unary, seq(
-      choice($.move_keyword, $.copyable_keyword),
+      choice($.move_keyword, $.copy_keyword),
       field('exp', $._variable_identifier),
     )),
 
@@ -473,7 +544,7 @@ module.exports = grammar({
       $.dot_expression,
       $.index_expression,
       // TODO: finish spec block.
-      // $.spec_block,
+      $.spec_block,
     ),
     //// Expression - End
 
@@ -587,6 +658,11 @@ module.exports = grammar({
     abort_keyword: $ => 'abort',
     continue_keyword: $ => 'continue',
     break_keyword: $ => 'break',
+
+    spec_keyword: $ => 'spec',
+    invariant_keyword: $ => 'invariant',
+    global_keyword: $ => 'global',
+    define_keyword: $ => 'define',
   }
 });
 

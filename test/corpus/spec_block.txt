@@ -1,0 +1,91 @@
+====
+spec block
+====
+
+spec {
+};
+
+spec fun test_spec {
+};
+spec struct Sp {
+};
+spec module {
+};
+
+spec {
+  use 0x0::M;
+  assert 1==1;
+  invariant update a + 1;
+  global b: u8;
+
+  define spec_func<A, B>(a: A, b: B): C {}
+  native define spec_native_func(): C;
+};
+
+
+----
+(source_file
+  (spec_block
+    (spec_keyword)
+    body: (spec_body))
+  (spec_block
+    (spec_keyword)
+    (fun_keyword)
+    (function_identifier)
+    body: (spec_body))
+  (spec_block
+    (spec_keyword)
+    (struct_keyword)
+    (struct_identifier)
+    body: (spec_body))
+  (spec_block
+    (spec_keyword)
+    (module_keyword)
+    body: (spec_body))
+  (spec_block
+    (spec_keyword)
+    body: (spec_body
+      (use_decl
+        (use_keyword)
+        address: (address_literal)
+        module: (module_identifier))
+      (spec_condition
+        (spec_cond)
+        (binary_expression
+          lhs: (num_literal)
+          operator: (binary_operator)
+          rhs: (num_literal)))
+      (spec_invariant
+        (invariant_keyword)
+        (invariant_op)
+        (binary_expression
+          lhs: (variable_identifier)
+          operator: (binary_operator)
+          rhs: (num_literal)))
+      (spec_variable
+        (global_keyword)
+        name: (variable_identifier)
+        type: (primative_type))
+      (usual_spec_function
+        (define_keyword)
+        name: (function_identifier)
+        type_params: (type_parameters
+          (type_parameter
+            (type_parameter_identifier))
+          (type_parameter
+            (type_parameter_identifier)))
+        params: (func_params
+          (function_parameter
+            name: (variable_identifier)
+            type: (struct_identifier))
+          (function_parameter
+            name: (variable_identifier)
+            type: (struct_identifier)))
+        return_type: (struct_identifier)
+        body: (block))
+      (native_spec_function
+        (native_keyword)
+        (define_keyword)
+        name: (function_identifier)
+        params: (func_params)
+        return_type: (struct_identifier)))))

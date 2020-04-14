@@ -100,6 +100,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -261,6 +265,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -415,6 +423,10 @@
           "named": true
         },
         {
+          "type": "spec_block",
+          "named": true
+        },
+        {
           "type": "unary_expression",
           "named": true
         },
@@ -507,6 +519,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -620,6 +636,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -720,6 +740,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -817,6 +841,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -1071,6 +1099,10 @@
           "named": true
         },
         {
+          "type": "spec_block",
+          "named": true
+        },
+        {
           "type": "unary_expression",
           "named": true
         },
@@ -1168,6 +1200,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -1343,6 +1379,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -1561,6 +1601,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -1638,6 +1682,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -1760,6 +1808,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -1890,6 +1942,10 @@
         },
         {
           "type": "return_expression",
+          "named": true
+        },
+        {
+          "type": "spec_block",
           "named": true
         },
         {
@@ -2187,6 +2243,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -2301,6 +2361,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -2412,6 +2476,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -2552,6 +2620,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unit_expression",
             "named": true
           },
@@ -2655,6 +2727,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -2789,6 +2865,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -2953,6 +3033,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -3130,6 +3214,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -3173,6 +3261,10 @@
         },
         {
           "type": "native_struct_definition",
+          "named": true
+        },
+        {
+          "type": "spec_block",
           "named": true
         },
         {
@@ -3246,7 +3338,7 @@
       "required": true,
       "types": [
         {
-          "type": "copyable_keyword",
+          "type": "copy_keyword",
           "named": true
         },
         {
@@ -3388,6 +3480,90 @@
         },
         {
           "type": "public_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "native_spec_function",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "function_identifier",
+            "named": true
+          }
+        ]
+      },
+      "params": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "func_params",
+            "named": true
+          }
+        ]
+      },
+      "return_type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "generic_struct_type",
+            "named": true
+          },
+          {
+            "type": "immutable_borrow_type",
+            "named": true
+          },
+          {
+            "type": "mutable_borrow_type",
+            "named": true
+          },
+          {
+            "type": "primative_type",
+            "named": true
+          },
+          {
+            "type": "scoped_struct_identifier",
+            "named": true
+          },
+          {
+            "type": "struct_identifier",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          }
+        ]
+      },
+      "type_params": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_parameters",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "define_keyword",
+          "named": true
+        },
+        {
+          "type": "native_keyword",
           "named": true
         }
       ]
@@ -3593,6 +3769,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -3826,6 +4006,10 @@
           "named": true
         },
         {
+          "type": "spec_block",
+          "named": true
+        },
+        {
           "type": "struct_definition",
           "named": true
         },
@@ -3851,6 +4035,405 @@
         },
         {
           "type": "while_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "spec_block",
+    "named": true,
+    "fields": {
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "spec_body",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "fun_keyword",
+          "named": true
+        },
+        {
+          "type": "function_identifier",
+          "named": true
+        },
+        {
+          "type": "module_keyword",
+          "named": true
+        },
+        {
+          "type": "spec_keyword",
+          "named": true
+        },
+        {
+          "type": "struct_identifier",
+          "named": true
+        },
+        {
+          "type": "struct_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "spec_body",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "native_spec_function",
+          "named": true
+        },
+        {
+          "type": "spec_condition",
+          "named": true
+        },
+        {
+          "type": "spec_invariant",
+          "named": true
+        },
+        {
+          "type": "spec_variable",
+          "named": true
+        },
+        {
+          "type": "use_decl",
+          "named": true
+        },
+        {
+          "type": "usual_spec_function",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "spec_condition",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "abort_expression",
+          "named": true
+        },
+        {
+          "type": "address_literal",
+          "named": true
+        },
+        {
+          "type": "annotate_expression",
+          "named": true
+        },
+        {
+          "type": "assign_expression",
+          "named": true
+        },
+        {
+          "type": "binary_expression",
+          "named": true
+        },
+        {
+          "type": "block",
+          "named": true
+        },
+        {
+          "type": "bool_literal",
+          "named": true
+        },
+        {
+          "type": "borrow_expression",
+          "named": true
+        },
+        {
+          "type": "break_expression",
+          "named": true
+        },
+        {
+          "type": "byte_string_literal",
+          "named": true
+        },
+        {
+          "type": "call_expression",
+          "named": true
+        },
+        {
+          "type": "cast_expression",
+          "named": true
+        },
+        {
+          "type": "continue_expression",
+          "named": true
+        },
+        {
+          "type": "dereference_expression",
+          "named": true
+        },
+        {
+          "type": "dot_expression",
+          "named": true
+        },
+        {
+          "type": "expression_list",
+          "named": true
+        },
+        {
+          "type": "if_expression",
+          "named": true
+        },
+        {
+          "type": "index_expression",
+          "named": true
+        },
+        {
+          "type": "loop_expression",
+          "named": true
+        },
+        {
+          "type": "move_or_copy_expression",
+          "named": true
+        },
+        {
+          "type": "num_literal",
+          "named": true
+        },
+        {
+          "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "return_expression",
+          "named": true
+        },
+        {
+          "type": "spec_block",
+          "named": true
+        },
+        {
+          "type": "spec_cond",
+          "named": true
+        },
+        {
+          "type": "unary_expression",
+          "named": true
+        },
+        {
+          "type": "unit_expression",
+          "named": true
+        },
+        {
+          "type": "variable_identifier",
+          "named": true
+        },
+        {
+          "type": "while_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "spec_invariant",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "abort_expression",
+          "named": true
+        },
+        {
+          "type": "address_literal",
+          "named": true
+        },
+        {
+          "type": "annotate_expression",
+          "named": true
+        },
+        {
+          "type": "assign_expression",
+          "named": true
+        },
+        {
+          "type": "binary_expression",
+          "named": true
+        },
+        {
+          "type": "block",
+          "named": true
+        },
+        {
+          "type": "bool_literal",
+          "named": true
+        },
+        {
+          "type": "borrow_expression",
+          "named": true
+        },
+        {
+          "type": "break_expression",
+          "named": true
+        },
+        {
+          "type": "byte_string_literal",
+          "named": true
+        },
+        {
+          "type": "call_expression",
+          "named": true
+        },
+        {
+          "type": "cast_expression",
+          "named": true
+        },
+        {
+          "type": "continue_expression",
+          "named": true
+        },
+        {
+          "type": "dereference_expression",
+          "named": true
+        },
+        {
+          "type": "dot_expression",
+          "named": true
+        },
+        {
+          "type": "expression_list",
+          "named": true
+        },
+        {
+          "type": "if_expression",
+          "named": true
+        },
+        {
+          "type": "index_expression",
+          "named": true
+        },
+        {
+          "type": "invariant_keyword",
+          "named": true
+        },
+        {
+          "type": "invariant_op",
+          "named": true
+        },
+        {
+          "type": "loop_expression",
+          "named": true
+        },
+        {
+          "type": "move_or_copy_expression",
+          "named": true
+        },
+        {
+          "type": "num_literal",
+          "named": true
+        },
+        {
+          "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "return_expression",
+          "named": true
+        },
+        {
+          "type": "spec_block",
+          "named": true
+        },
+        {
+          "type": "unary_expression",
+          "named": true
+        },
+        {
+          "type": "unit_expression",
+          "named": true
+        },
+        {
+          "type": "variable_identifier",
+          "named": true
+        },
+        {
+          "type": "while_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "spec_variable",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "variable_identifier",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "generic_struct_type",
+            "named": true
+          },
+          {
+            "type": "immutable_borrow_type",
+            "named": true
+          },
+          {
+            "type": "mutable_borrow_type",
+            "named": true
+          },
+          {
+            "type": "primative_type",
+            "named": true
+          },
+          {
+            "type": "scoped_struct_identifier",
+            "named": true
+          },
+          {
+            "type": "struct_identifier",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "global_keyword",
           "named": true
         }
       ]
@@ -4150,6 +4733,10 @@
             "named": true
           },
           {
+            "type": "spec_block",
+            "named": true
+          },
+          {
             "type": "unary_expression",
             "named": true
           },
@@ -4335,6 +4922,96 @@
     }
   },
   {
+    "type": "usual_spec_function",
+    "named": true,
+    "fields": {
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "function_identifier",
+            "named": true
+          }
+        ]
+      },
+      "params": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "func_params",
+            "named": true
+          }
+        ]
+      },
+      "return_type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "generic_struct_type",
+            "named": true
+          },
+          {
+            "type": "immutable_borrow_type",
+            "named": true
+          },
+          {
+            "type": "mutable_borrow_type",
+            "named": true
+          },
+          {
+            "type": "primative_type",
+            "named": true
+          },
+          {
+            "type": "scoped_struct_identifier",
+            "named": true
+          },
+          {
+            "type": "struct_identifier",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          }
+        ]
+      },
+      "type_params": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_parameters",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "define_keyword",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "while_expression",
     "named": true,
     "fields": {
@@ -4432,6 +5109,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -4546,6 +5227,10 @@
           },
           {
             "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
             "named": true
           },
           {
@@ -4683,7 +5368,15 @@
     "named": true
   },
   {
+    "type": "copy_keyword",
+    "named": true
+  },
+  {
     "type": "copyable_keyword",
+    "named": true
+  },
+  {
+    "type": "define_keyword",
     "named": true
   },
   {
@@ -4707,7 +5400,19 @@
     "named": true
   },
   {
+    "type": "global_keyword",
+    "named": true
+  },
+  {
     "type": "if_keyword",
+    "named": true
+  },
+  {
+    "type": "invariant_keyword",
+    "named": true
+  },
+  {
+    "type": "invariant_op",
     "named": true
   },
   {
@@ -4748,6 +5453,14 @@
   },
   {
     "type": "return_keyword",
+    "named": true
+  },
+  {
+    "type": "spec_cond",
+    "named": true
+  },
+  {
+    "type": "spec_keyword",
     "named": true
   },
   {

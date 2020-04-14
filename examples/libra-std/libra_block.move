@@ -1,3 +1,17 @@
+// dep: tests/sources/stdlib/modules/libra.move
+// dep: tests/sources/stdlib/modules/vector.move
+// dep: tests/sources/stdlib/modules/lbr.move
+// dep: tests/sources/stdlib/modules/libra_account.move
+// dep: tests/sources/stdlib/modules/libra_system.move
+// dep: tests/sources/stdlib/modules/libra_time.move
+// dep: tests/sources/stdlib/modules/transaction.move
+// dep: tests/sources/stdlib/modules/transaction_fee.move
+// dep: tests/sources/stdlib/modules/validator_config.move
+// dep: tests/sources/stdlib/modules/hash.move
+// dep: tests/sources/stdlib/modules/lcs.move
+// dep: tests/sources/stdlib/modules/libra_transaction_timeout.move
+// no-verify
+
 address 0x0:
 
 module LibraBlock {
