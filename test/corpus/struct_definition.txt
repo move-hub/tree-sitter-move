@@ -1,0 +1,47 @@
+====
+struct_definition
+====
+
+resource struct EventHandle<T: copyable> {
+    counter: u64,
+    guid: vector<u8>,
+}
+
+
+----
+(source_file
+  (struct_definition
+    (resource_keyword)
+    (struct_keyword)
+    name: (struct_identifier)
+    type_params: (type_parameters
+      (type_parameter
+        (type_parameter_identifier)
+        (copyable_keyword)))
+    fields: (struct_def_fields
+      (field_annotation
+        field: (field_identifier)
+        type: (primative_type))
+      (field_annotation
+        field: (field_identifier)
+        type: (generic_struct_type
+          struct: (struct_identifier)
+          type_arguments: (type_arguments
+            (primative_type)))))))
+
+
+====
+native_struct_definition
+====
+
+native struct Event<T>;
+
+----
+(source_file
+  (native_struct_definition
+    (native_keyword)
+    (struct_keyword)
+    name: (struct_identifier)
+    type_params: (type_parameters
+      (type_parameter
+        (type_parameter_identifier)))))

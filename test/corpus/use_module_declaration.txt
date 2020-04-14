@@ -1,0 +1,19 @@
+====
+use_module_declaration
+====
+
+use 0x01::B;
+use 0x01::B as T;
+
+---
+(source_file
+  (use_decl
+    (use_keyword)
+    address: (address_literal)
+    module: (module_identifier))
+  (use_decl
+    (use_keyword)
+    address: (address_literal)
+    module: (module_identifier)
+    (as_keyword)
+    as: (module_identifier)))

@@ -1,0 +1,178 @@
+====
+break_expression
+====
+
+break;
+
+---
+(source_file
+  (break_expression (break_keyword)))
+
+====
+continue_expression
+====
+
+continue;
+---
+(source_file
+  (continue_expression (continue_keyword)))
+
+====
+pack_expression
+====
+M::S<A,B> {
+  f1: exp1,
+  f2: exp2,
+};
+---
+
+(source_file
+  (pack_expression
+    (generic_struct_type
+      (scoped_struct_identifier
+        (module_identifier)
+        (struct_identifier))
+      (type_arguments
+        (struct_identifier)
+        (struct_identifier)))
+    (field_initialize_list
+    (exp_field
+      (field_identifier)
+      (variable_identifier))
+    (exp_field
+      (field_identifier)
+      (variable_identifier)))))
+
+
+
+====
+call_expression
+====
+
+M::borrow_global_mut<A>(sender);
+
+---
+
+(source_file
+  (call_expression
+    (scoped_function_identifier
+      (module_identifier)
+      (function_identifier))
+    (type_arguments
+      (struct_identifier))
+    (arg_list
+      (variable_identifier))))
+
+
+====
+annotate_expression
+====
+
+(a: A);
+
+---
+
+(source_file
+  (annotate_expression
+    (variable_identifier)
+    (struct_identifier)))
+
+====
+cast_expression
+====
+
+(a as B);
+(a as &mut B);
+((a+b) as u64);
+((a+b) as vector<u8>);
+---
+
+(source_file
+  (cast_expression
+    exp: (variable_identifier)
+    (as_keyword)
+    ty: (struct_identifier))
+  (cast_expression
+    exp: (variable_identifier)
+    (as_keyword)
+    ty: (mutable_borrow_type
+      (struct_identifier)))
+  (cast_expression
+    exp: (expression_list
+      (binary_expression
+        lhs: (variable_identifier)
+        operator: (binary_operator)
+        rhs: (variable_identifier)))
+    (as_keyword)
+    ty: (primative_type))
+  (cast_expression
+    exp: (expression_list
+      (binary_expression
+        lhs: (variable_identifier)
+        operator: (binary_operator)
+        rhs: (variable_identifier)))
+    (as_keyword)
+    ty: (generic_struct_type
+      struct: (struct_identifier)
+      type_arguments: (type_arguments
+        (primative_type)))))
+
+====
+dot_expression
+====
+
+a.b;
+a().b;
+&mut a.b;
+(&mut a).b;
+
+---
+(source_file
+  (dot_expression
+    e: (variable_identifier)
+    f: (field_identifier))
+  (dot_expression
+    e: (call_expression
+      function: (function_identifier)
+      args: (arg_list))
+    f: (field_identifier))
+  (borrow_expression
+    exp: (dot_expression
+      e: (variable_identifier)
+      f: (field_identifier)))
+  (dot_expression
+    e: (expression_list
+      (borrow_expression
+        exp: (variable_identifier)))
+    f: (field_identifier)))
+
+====
+unit_expression
+====
+
+();
+
+---
+(source_file
+  (unit_expression))
+
+
+====
+expression_list
+====
+
+(a, 1, A{a: 1, b});
+
+---
+(source_file
+  (expression_list
+    (variable_identifier)
+    (num_literal)
+    (pack_expression
+      name: (struct_identifier)
+      body: (field_initialize_list
+        (exp_field
+          field: (field_identifier)
+          exp: (num_literal))
+        (exp_field
+          field: (field_identifier))))))

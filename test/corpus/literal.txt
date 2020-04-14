@@ -1,0 +1,35 @@
+====
+_literal_value
+====
+
+1u8;
+2u64;
+3u128;
+4;
+
+0x00;
+0x1;
+0xa1232;
+
+true;
+false;
+
+x"";
+x"abc";
+x"\n";
+
+---
+
+(source_file
+  (num_literal)
+  (num_literal)
+  (num_literal)
+  (num_literal)
+  (address_literal)
+  (address_literal)
+  (address_literal)
+  (bool_literal)
+  (bool_literal)
+  (byte_string_literal)
+  (byte_string_literal)
+  (byte_string_literal))

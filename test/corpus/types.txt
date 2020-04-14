@@ -1,0 +1,139 @@
+====
+primative_type
+====
+
+let a: u8;
+let a: bool;
+let a: address;
+
+
+---
+
+(source_file
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (primative_type))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (primative_type))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (primative_type)))
+
+====
+borrow_type
+====
+
+let a: &address;
+let a: &mut address;
+
+
+----
+(source_file
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (immutable_borrow_type
+      (primative_type)))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (mutable_borrow_type
+      (primative_type))))
+
+====
+tuple_type
+====
+
+let a: (A);
+let a: (A, &mut A);
+
+---
+(source_file
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (tuple_type
+      (struct_identifier)))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (tuple_type
+      (struct_identifier)
+      (mutable_borrow_type
+        (struct_identifier)))))
+
+====
+struct_type
+====
+let a: A;
+let a: A<B>;
+let a: A<bool>;
+let a: A<B<C>>;
+let a: A<vector<u8>>;
+let a: M::A<C, D<E>, E<F<G>>>;
+
+---
+
+(source_file
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (struct_identifier))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (generic_struct_type
+      struct: (struct_identifier)
+      type_arguments: (type_arguments
+        (struct_identifier))))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (generic_struct_type
+      struct: (struct_identifier)
+      type_arguments: (type_arguments
+        (primative_type))))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (generic_struct_type
+      struct: (struct_identifier)
+      type_arguments: (type_arguments
+        (generic_struct_type
+          struct: (struct_identifier)
+          type_arguments: (type_arguments
+            (struct_identifier))))))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (generic_struct_type
+      struct: (struct_identifier)
+      type_arguments: (type_arguments
+        (generic_struct_type
+          struct: (struct_identifier)
+          type_arguments: (type_arguments
+            (primative_type))))))
+  (declare_statement
+    (let_keyword)
+    variable: (variable_identifier)
+    type: (generic_struct_type
+      struct: (scoped_struct_identifier
+        module: (module_identifier)
+        struct: (struct_identifier))
+      type_arguments: (type_arguments
+        (struct_identifier)
+        (generic_struct_type
+          struct: (struct_identifier)
+          type_arguments: (type_arguments
+            (struct_identifier)))
+        (generic_struct_type
+          struct: (struct_identifier)
+          type_arguments: (type_arguments
+            (generic_struct_type
+              struct: (struct_identifier)
+              type_arguments: (type_arguments
+                (struct_identifier)))))))))

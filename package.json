@@ -1,0 +1,39 @@
+{
+  "name": "tree-sitter-move",
+  "version": "0.1.0",
+  "description": "move grammar for tree-sitter",
+  "main": "index.js",
+  "scripts": {
+    "test": "tree-sitter test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nonsense0202/tree-sitter-move.git"
+  },
+  "keywords": [
+    "parser",
+    "move",
+    "libra"
+  ],
+  "author": "nonsense2020 <nonsense0202@pm.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nonsense0202/tree-sitter-move/issues"
+  },
+  "homepage": "https://github.com/nonsense0202/tree-sitter-move",
+  "dependencies": {
+    "nan": "^2.14.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.16.5"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.move",
+      "injection-regex": "move",
+      "file-types": [
+        "move"
+      ]
+    }
+  ]
+}

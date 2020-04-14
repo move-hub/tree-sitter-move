@@ -1,0 +1,74 @@
+====
+if_expression with block
+====
+
+if (proposer == 0x0) {
+} else {
+};
+
+----
+(source_file
+  (if_expression
+    (if_keyword)
+    eb: (binary_expression
+      lhs: (variable_identifier)
+      operator: (binary_operator)
+      rhs: (address_literal))
+    et: (block)
+    (else_keyword)
+    ef: (block)))
+
+====
+if_expression with expression
+====
+
+if (i >= len) abort 10;
+
+
+----
+
+(source_file
+  (if_expression
+    (if_keyword)
+    eb: (binary_expression
+      lhs: (variable_identifier)
+      operator: (binary_operator)
+      rhs: (variable_identifier))
+    et: (abort_expression
+      (abort_keyword)
+      abort: (num_literal))))
+
+====
+if_expression with nest if
+====
+
+if (i >= len)
+  abort 10
+else if (i == len)
+  return 1
+else {};
+
+---
+(source_file
+  (if_expression
+    (if_keyword)
+    eb: (binary_expression
+      lhs: (variable_identifier)
+      operator: (binary_operator)
+      rhs: (variable_identifier))
+    et: (abort_expression
+      (abort_keyword)
+      abort: (num_literal))
+    (else_keyword)
+    ef: (if_expression
+      (if_keyword)
+      eb: (binary_expression
+        lhs: (variable_identifier)
+        operator: (binary_operator)
+        rhs: (variable_identifier))
+      et: (return_expression
+        (return_keyword)
+        return: (num_literal))
+      (else_keyword)
+      ef: (block))))
+
