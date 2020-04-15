@@ -1,19 +1,19 @@
 (module_identifier) @namespace
 (struct_identifier) @struct
 (function_identifier) @function
+
 (variable_identifier) @variable
 (func_params
   (function_parameter
-    name: (variable_identifier) @variable.modification
+    name: (variable_identifier) @parameter.modification
     type: (mutable_borrow_type)))
 (func_params
   (function_parameter
-    name: (variable_identifier) @variable.readonly
+    name: (variable_identifier) @parameter.readonly
     type: (immutable_borrow_type)))
+
 (type_parameter_identifier) @typeParameter
 (field_identifier) @member
-
-(generic_struct_type) @type
 (primative_type) @type
 
 (binary_expression
@@ -55,3 +55,5 @@
 
 (spec_keyword) @keyword
 (invariant_keyword) @keyword
+(global_keyword) @keyword
+(define_keyword) @keyword
