@@ -1,2 +1,4 @@
-corpus
 examples
+test
+playgroud.move
+*.wasm
