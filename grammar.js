@@ -40,16 +40,10 @@ const PREC = {
 module.exports = grammar({
   name: 'move',
   extras: $ => [/\s/, $.line_comment],
-  inline: $ => [
-    // $._struct_type,
-    // $._function_identity,
-    // $._struct_signature,
-    // $._declaration_statement,
-    // $._expression_ending_with_block,
-  ],
   conflicts: $ => [
     [$._struct_identifier, $._variable_identifier, $._function_identifier],
     [$._struct_identifier, $._function_identifier],
+    [$.function_type_params]
   ],
   rules: {
     source_file: $ => repeat($._statement),
@@ -242,7 +236,7 @@ module.exports = grammar({
       $.tuple_type,
       $.primative_type,
       // TODO: spec only
-      // $.function_type,
+      $.function_type,
     ),
     primative_type: $ => choice(
       'u8',
@@ -285,7 +279,12 @@ module.exports = grammar({
     immutable_borrow_type: $ => seq('&', $._type),
     mutable_borrow_type: $ => seq('&mut', $._type),
     tuple_type: $ => seq('(', sepBy1(',', $._type), ')'),
-    function_type: $ => seq('|', sepBy(',', $._type), '|', $._type),
+
+    function_type: $ => seq(
+      field('param_types', $.function_type_params),
+      field('return_type', $._type)
+    ),
+    function_type_params: $ => seq('|', sepBy(',', $._type), '|'),
 
     // function parameter grammar
     function_parameter: $ => seq(
@@ -325,7 +324,7 @@ module.exports = grammar({
 
     _expression: $ => choice(
       // TODO: spec only
-      // $.lambda_expression,
+      $.lambda_expression,
       $.if_expression,
       $.while_expression,
       $.loop_expression,
@@ -335,6 +334,16 @@ module.exports = grammar({
       // unary expression is included in binary_op,
       $._unary_expression,
       $.binary_expression,
+    ),
+
+    lambda_expression: $ => seq(
+      field('bindings', $.lambda_bindings),
+      field('exp', $._expression)
+    ),
+    lambda_bindings: $ => seq(
+      '|',
+      sepBy(',', $._bind),
+      '|'
     ),
 
     block: $ => seq(

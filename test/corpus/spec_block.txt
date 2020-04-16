@@ -1,4 +1,98 @@
 ====
+spec function_type
+====
+spec module {
+  native define all<T>(x: SomeCollection<T>, predicate: |T, |T, SomeCollection<T>|bool|bool): bool;
+};
+----
+(source_file
+  (spec_block
+    (spec_keyword)
+    (module_keyword)
+    body: (spec_body
+      (native_spec_function
+        (native_keyword)
+        (define_keyword)
+        name: (function_identifier)
+        type_params: (type_parameters
+          (type_parameter
+            (type_parameter_identifier)))
+        params: (func_params
+          (function_parameter
+            name: (variable_identifier)
+            type: (generic_struct_type
+              struct: (struct_identifier)
+              type_arguments: (type_arguments
+                (struct_identifier))))
+          (function_parameter
+            name: (variable_identifier)
+            type: (function_type
+              param_types: (function_type_params
+                (struct_identifier)
+                (function_type
+                  param_types: (function_type_params
+                    (struct_identifier)
+                    (generic_struct_type
+                      struct: (struct_identifier)
+                      type_arguments: (type_arguments
+                        (struct_identifier))))
+                  return_type: (primative_type)))
+              return_type: (primative_type))))
+        return_type: (primative_type)))))
+
+====
+spec lambda expression
+====
+
+spec module {
+  define any():u8 {
+    let _ = |z| z + 1;
+    let _ = x .. y;
+    let _ = || x +1;
+  }
+};
+---
+(source_file
+  (spec_block
+    (spec_keyword)
+    (module_keyword)
+    body: (spec_body
+      (usual_spec_function
+        (define_keyword)
+        name: (function_identifier)
+        params: (func_params)
+        return_type: (primative_type)
+        body: (block
+          (let_var_statement
+            (let_keyword)
+            variable: (variable_identifier)
+            exp: (lambda_expression
+              bindings: (lambda_bindings
+                (bind_var
+                  (variable_identifier)))
+              exp: (binary_expression
+                lhs: (variable_identifier)
+                operator: (binary_operator)
+                rhs: (num_literal))))
+          (let_var_statement
+            (let_keyword)
+            variable: (variable_identifier)
+            exp: (binary_expression
+              lhs: (variable_identifier)
+              operator: (binary_operator)
+              rhs: (variable_identifier)))
+          (let_var_statement
+            (let_keyword)
+            variable: (variable_identifier)
+            exp: (lambda_expression
+              bindings: (lambda_bindings)
+              exp: (binary_expression
+                lhs: (variable_identifier)
+                operator: (binary_operator)
+                rhs: (num_literal)))))))))
+
+
+====
 spec block
 ====
 
