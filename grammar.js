@@ -43,47 +43,59 @@ module.exports = grammar({
   conflicts: $ => [
     [$._struct_identifier, $._variable_identifier, $._function_identifier],
     [$._struct_identifier, $._function_identifier],
-    [$.function_type_params]
+    [$.function_type_params],
+    [$.name_expression],
   ],
+
   rules: {
     source_file: $ => repeat($._statement),
     _statement: $ => choice(
-      $._declaration_statement,
-      $._expression_statement,
-    ),
-    _declaration_statement: $ => choice(
-      $.address_declaration,
+      $.address_block,
+      $.script_block,
       $.module_definition,
+
+      // the following is additional to make move code pieces highlighting work.
+      $._block_item,
       $.use_decl,
       $._function_definition,
       $._struct_definition,
     ),
 
-    _expression_statement: $ => seq(
-      choice(
-        $.let_unpack_statement,
-        $.let_var_statement,
-        $.declare_statement,
-        $._expression
-      ),
+    address_block: $ => seq(
+      $.address_keyword,
+      field('address', $.address_literal),
+      "{",
+      repeat($.module_definition),
+      "}"
+    ),
+    script_block: $ => seq(
+      "script",
+      "{",
+      repeat($.use_decl),
+      $.usual_function_definition,
+      repeat($.spec_block),
+      "}"
+    ),
+    // parse use declaration
+    use_decl: $ => seq(
+      $.use_keyword,
+      $.module_ident,
+      optional(seq(
+        $.as_keyword,
+        field('as', $._module_identifier)
+      )),
       ';'
     ),
 
-
-    address_declaration: $ => seq(
-      $.address_keyword,
-      field('address', $.address_literal),
-      ':'
-    ),
 
     module_definition: $ => {
       return seq(
         $.module_keyword,
         field('name', $._module_identifier),
-        field('body', $.module_block),
+        field('body', $.module_body),
       );
     },
-    module_block: $ => {
+    module_body: $ => {
       return seq(
         '{',
         repeat($.use_decl),
@@ -124,7 +136,7 @@ module.exports = grammar({
       optional($.resource_keyword),
       $.struct_keyword,
       field('name', $._struct_identifier),
-      optional(field('type_params', $.type_parameters)),
+      optional(field('type_parameters', $.type_parameters)),
     ),
 
     _function_definition: $ => choice(
@@ -155,7 +167,7 @@ module.exports = grammar({
       ')',
     ),
     resource_accquires: $ => seq(
-      $.acquires_keyword, sepBy1(',', $.struct_identity)
+      $.acquires_keyword, sepBy1(',', $.module_access)
     ),
 
     //// Spec block start
@@ -165,6 +177,11 @@ module.exports = grammar({
         seq($.fun_keyword, $._function_identifier),
         seq($.struct_keyword, $._struct_identifier),
         $.module_keyword,
+        seq(
+          'schema',
+          $.identifier,
+          optional(field('type_parameters', $.type_parameters)),
+        ),
       )),
       field('body', $.spec_body)
     ),
@@ -179,6 +196,9 @@ module.exports = grammar({
       $.spec_invariant,
       $._spec_function,
       $.spec_condition,
+      $.spec_include,
+      $.spec_apply,
+      $.spec_pragma,
       $.spec_variable
     ),
     spec_condition: $ => seq(
@@ -195,9 +215,35 @@ module.exports = grammar({
       $._expression,
       ';'
     ),
+    spec_include: $ => seq('include', $._expression, ';'),
+
+    spec_apply: $ => seq(
+      'apply',
+      $._expression,
+      'to',
+      sepBy1(',', $.spec_apply_pattern),
+      optional(seq('except', sepBy1(',', $.spec_apply_pattern))),
+      ';'
+    ),
+    spec_apply_pattern: $ => seq(
+      optional(choice('public', 'internal')),
+      $.spec_apply_fragment,
+      repeat($.spec_apply_fragment),
+      optional(field('type_parameters', $.type_parameters)),
+    ),
+    spec_apply_fragment: $ => choice($.identifier, '*'),
+
+    spec_pragma: $ => seq(
+      'pragma',
+      sepBy(',', $.spec_pragma_property),
+      ';'
+    ),
+    spec_pragma_property: $ => seq($.identifier, optional(seq('=', $._literal_value))),
+
     spec_variable: $ => seq(
-      $.global_keyword,
-      field('name', $._variable_identifier),
+      optional(choice('global', 'local')),
+      field('name', $.identifier),
+      optional(field('type_parameters', $.type_parameters)),
       ':',
       field('type', $._type),
       ';'
@@ -210,17 +256,18 @@ module.exports = grammar({
 
     native_spec_function: $ => seq(
       $.native_keyword,
+      $.define_keyword,
       $._spec_function_signature,
       ';'
     ),
     usual_spec_function: $ => seq(
+      $.define_keyword,
       $._spec_function_signature,
       field('body', $.block)
     ),
     _spec_function_signature: $ => seq(
-      optional($.define_keyword),
       field('name', $._function_identifier),
-      optional(field('type_params', $.type_parameters)),
+      optional(field('type_parameters', $.type_parameters)),
       field('params', $.func_params),
       seq(':', field('return_type', $._type)),
     ),
@@ -230,14 +277,24 @@ module.exports = grammar({
 
     // move type grammar
     _type: $ => choice(
-      $._struct_type,
-      $.immutable_borrow_type,
-      $.mutable_borrow_type,
+      // $.immutable_borrow_type,
+      // $.mutable_borrow_type,
+      $.apply_type,
+      $.ref_type,
       $.tuple_type,
-      $.primative_type,
+      // $.primative_type,
       // TODO: spec only
       $.function_type,
     ),
+    apply_type: $ => seq(
+      $.module_access,
+      optional(field('type_arguments', $.type_arguments)),
+    ),
+    ref_type: $ => seq(
+      choice('&', '&mut'),
+      $._type
+    ),
+    tuple_type: $ => seq('(', sepBy1(',', $._type), ')'),
     primative_type: $ => choice(
       'u8',
       'u64',
@@ -246,39 +303,23 @@ module.exports = grammar({
       'address',
       'bytearray',
     ),
-
-    _struct_type: $ => choice(
-      $._struct_identifier,
-      $.scoped_struct_identifier,
-      $.generic_struct_type,
+    module_access: $ => choice(
+      $.identifier,
+      seq('::', $.identifier),
+      seq($._module_identifier, '::', $.identifier),
+      seq($.module_ident, '::', $.identifier)
+    ),
+    module_ident: $ => seq(
+      field('address', $.address_literal),
+      '::',
+      field('module', $._module_identifier)
     ),
 
-    generic_struct_type: $ => seq(
-      field('struct', choice(
-        $._struct_identifier,
-        $.scoped_struct_identifier,
-      )),
-      field('type_arguments', $.type_arguments),
-    ),
     type_arguments: $ => seq(
-      prec.dynamic(1, '<'),
-      sepBy(',', $._type),
+      '<',
+      sepBy1(',', $._type),
       '>'
     ),
-
-    scoped_struct_identifier: $ => seq(
-      $._module_path_prefix,
-      field('struct', $._struct_identifier),
-    ),
-
-    struct_identity: $ => seq(
-      optional($._module_path_prefix),
-      field('struct', $._struct_identifier),
-    ),
-
-    immutable_borrow_type: $ => seq('&', $._type),
-    mutable_borrow_type: $ => seq('&mut', $._type),
-    tuple_type: $ => seq('(', sepBy1(',', $._type), ')'),
 
     function_type: $ => seq(
       field('param_types', $.function_type_params),
@@ -294,30 +335,35 @@ module.exports = grammar({
     ),
 
     // type parameter grammar
+    type_parameters: $ => seq('<', sepBy1(',', $.type_parameter), '>'),
     type_parameter: $ => seq(
       $._type_parameter_identifier,
       optional(seq(':', choice($.copyable_keyword, $.resource_keyword)))
     ),
 
-    declare_statement: $ => seq(
-      $.let_keyword,
-      field('variable', $._variable_identifier),
-      seq(':', field('type', $._type)),
+
+    //// Block
+
+    block: $ => seq(
+      '{',
+      repeat($._block_item),
+      optional(choice($._expression, $.let_statement)),
+      '}'
     ),
-    // simple form: let a = 10;
-    let_var_statement: $ => seq(
+    _block_item: $ => seq(
+      choice(
+        $._expression,
+        $.let_statement,
+      ),
+      ';'
+    ),
+    let_statement: $ => seq(
       $.let_keyword,
-      field('variable', $._variable_identifier),
+      $.bind_list,
       optional(seq(':', field('type', $._type))),
-      seq('=', field('exp', $._expression))
+      optional(seq('=', field('exp', $._expression)))
     ),
-    // destruct form
-    let_unpack_statement: $ => seq(
-      $.let_keyword,
-      field('bind', choice($.bind_unpack, $.bind_list)),
-      optional(seq(':', field('type', $._type))),
-      seq('=', field('exp', $._expression))
-    ),
+    //// Block end
 
 
     //// Expression
@@ -345,61 +391,6 @@ module.exports = grammar({
       sepBy(',', $._bind),
       '|'
     ),
-
-    block: $ => seq(
-      '{',
-      repeat($._expression_statement),
-      optional(choice(
-        $.let_unpack_statement,
-        $.let_var_statement,
-        $.declare_statement,
-        $._expression
-      )),
-      '}'
-    ),
-    // move or copy
-    move_or_copy_expression: $ => prec(PREC.unary, seq(
-      choice($.move_keyword, $.copy_keyword),
-      field('exp', $._variable_identifier),
-    )),
-
-    // <ModuleAccess> ("<" Comma<Type> ">")? "(" Comma<Exp> ")"
-    // or global call
-    // "::" <Name> ("<" Comma<Type> ">")? "(" Comma<Exp> ")"
-    call_expression: $ => prec(PREC.call, seq(
-      field('function', $._function_identity),
-      optional(field('type_arguments', $.type_arguments)),
-      field('args', $.arg_list),
-    )),
-    arg_list: $ => seq(
-      '(',
-      sepBy(',', $._expression),
-      ')'
-    ),
-
-    _function_identity: $ => choice(
-      $._function_identifier,
-      $.global_function_identifier,
-      $.scoped_function_identifier,
-    ),
-    global_function_identifier: $ => seq('::', $._function_identifier),
-    scoped_function_identifier: $ => seq(
-      $._module_path_prefix,
-      field('name', $._function_identifier)
-    ),
-
-
-    // <ModuleAccess> ("<" Comma<Type> ">")? "{" Comma<ExpField> "}"
-    pack_expression: $ => seq(
-      field('name', $._struct_type),
-      field('body', $.field_initialize_list),
-    ),
-    field_initialize_list: $ => seq(
-      '{',
-      sepBy(',', $.exp_field),
-      '}'
-    ),
-
     /// if-else expression
     if_expression: $ => prec.right(
       seq(
@@ -408,12 +399,11 @@ module.exports = grammar({
         field('eb', $._expression),
         ')',
         field('et', $._expression),
-        optional($._else_tail),
+        optional(seq(
+          $.else_keyword,
+          field('ef', $._expression)
+        )),
       )
-    ),
-    _else_tail: $ => seq(
-      $.else_keyword,
-      field('ef', $._expression)
     ),
 
     //// while expression
@@ -428,9 +418,10 @@ module.exports = grammar({
     //// loop expression
     loop_expression: $ => seq($.loop_keyword, field('body', $._expression)),
 
-    expression_list: $ => seq('(', sepBy1(',', $._expression), ')'),
-    unit_expression: $ => seq('(', ')'),
-
+    //// return expression
+    return_expression: $ => seq($.return_keyword, optional(field('return', $._expression))),
+    // abort expression
+    abort_expression: $ => seq($.abort_keyword, field('abort', $._expression)),
 
     assign_expression: $ => prec.left(PREC.assign,
       seq(
@@ -439,54 +430,6 @@ module.exports = grammar({
         field('rhs', $._expression)
       )
     ),
-
-    //// return expression
-    return_expression: $ => seq($.return_keyword, optional(field('return', $._expression))),
-    abort_expression: $ => seq($.abort_keyword, field('abort', $._expression)),
-    break_expression: $ => $.break_keyword,
-    continue_expression: $ => $.continue_keyword,
-    // dereference
-    dereference_expression: $ => prec(PREC.unary, seq(
-      '*',
-      field('exp', $._unary_expression),
-    )),
-    // borrow
-    borrow_expression: $ => prec(PREC.unary, seq(
-      choice('&', '&mut'),
-      field('exp', $._unary_expression),
-    )),
-    dot_expression: $ => prec.left(PREC.field, seq(
-      field('e', $._expression_term),
-      '.',
-      field('f', $._field_identifier)
-    )),
-    index_expression: $ => prec.left(PREC.call, seq(
-      field('e',
-        $._expression_term,
-      ),
-      '[', field('idx', $._expression), ']'
-    )),
-
-    cast_expression: $ => seq(
-      '(',
-      field('exp', $._expression),
-      $.as_keyword,
-      field('ty', $._type),
-      ')'
-    ),
-    annotate_expression: $ => seq(
-      '(',
-      field('exp', $._expression),
-      ':',
-      field('ty', $._type),
-      ')'
-    ),
-    unary_expression: $ => seq(
-      field('op', $.unary_op),
-      field('exp', $._unary_expression)
-    ),
-    unary_op: $ => token(choice('!')),
-
 
     //      BinOpExp =
     //          <BinOpExp> <BinOp> <BinOpExp>
@@ -537,25 +480,142 @@ module.exports = grammar({
       $.move_or_copy_expression,
       $._expression_term,
     ),
+    unary_expression: $ => seq(
+      field('op', $.unary_op),
+      field('exp', $._unary_expression)
+    ),
+    unary_op: $ => token(choice('!')),
 
+    // dereference
+    dereference_expression: $ => prec(PREC.unary, seq(
+      '*',
+      field('exp', $._unary_expression),
+    )),
+    // borrow
+    borrow_expression: $ => prec(PREC.unary, seq(
+      choice('&', '&mut'),
+      field('exp', $._unary_expression),
+    )),
+    // move or copy
+    move_or_copy_expression: $ => prec(PREC.unary, seq(
+      choice($.move_keyword, $.copy_keyword),
+      field('exp', $._variable_identifier),
+    )),
+
+    // TODO: update module access parsing
     _expression_term: $ => choice(
       $.break_expression,
       $.continue_expression,
-      $._variable_identifier, // check the pri of index and field
-      $.pack_expression,
+      $._name_exp,
       $._literal_value,
       $.unit_expression,
       $.expression_list,
       $.annotate_expression,
       $.cast_expression,
       $.block,
-      $.call_expression,
+      $.spec_block,
+
       $.dot_expression,
       $.index_expression,
-      // TODO: finish spec block.
-      $.spec_block,
     ),
-    //// Expression - End
+    break_expression: $ => $.break_keyword,
+    continue_expression: $ => $.continue_keyword,
+    _name_exp: $ => choice(
+      $.name_expression,
+      $.pack_expression,
+      $.call_expression,
+    ),
+    name_expression: $ => prec(-1, seq(
+      $.module_access,
+      optional(field('type_arguments', $.type_arguments))
+    )),
+    pack_expression: $ => seq(
+      $.name_expression,
+      field('body', $.field_initialize_list),
+    ),
+    field_initialize_list: $ => seq(
+      '{',
+      sepBy(',', $.exp_field),
+      '}'
+    ),
+
+    call_expression: $ => prec(PREC.call, seq(
+      $.name_expression,
+      field('args', $.arg_list),
+    )),
+    arg_list: $ => seq(
+      '(',
+      sepBy(',', $._expression),
+      ')'
+    ),
+
+    expression_list: $ => seq('(', sepBy1(',', $._expression), ')'),
+    unit_expression: $ => seq('(', ')'),
+    cast_expression: $ => seq(
+      '(',
+      field('exp', $._expression),
+      $.as_keyword,
+      field('ty', $._type),
+      ')'
+    ),
+    annotate_expression: $ => seq(
+      '(',
+      field('exp', $._expression),
+      ':',
+      field('ty', $._type),
+      ')'
+    ),
+
+
+    dot_expression: $ => prec.left(PREC.field, seq(
+      field('e', $._expression_term),
+      '.',
+      field('f', $._field_identifier)
+    )),
+    index_expression: $ => prec.left(PREC.call, seq(
+      field('e',
+        $._expression_term,
+      ),
+      '[', field('idx', $._expression), ']'
+    )),
+
+    /// Expression end
+
+    //// Fields and Bindings
+    exp_field: $ => seq(
+      field('field', $._field_identifier),
+      optional(seq(
+        ':',
+        field('exp', $._expression)
+      ))
+    ),
+
+    // The bindlist is enclosed in parenthesis, except that the parenthesis are
+    // optional if there is a single Bind.
+    bind_list: $ => choice(
+      $._bind,
+      seq('(', sepBy(',', $._bind), ')')
+    ),
+    _bind: $ => choice(
+      alias($._variable_identifier, $.bind_var),
+      $.bind_unpack,
+    ),
+    bind_unpack: $ => seq(
+      $.module_access,
+      optional(field('type_arguments', $.type_arguments)),
+      field('bind_fields', $.bind_fields),
+    ),
+    bind_fields: $ => seq(
+      '{', sepBy(',', $.bind_field), '}'
+    ),
+    bind_field: $ => choice(
+      $._field_identifier, // direct bind
+      seq(
+        field('field', $._field_identifier),
+        ':',
+        field('bind', $._bind)),
+    ),
+    //// Fields and Bindings - End
 
 
     //// literal
@@ -569,64 +629,9 @@ module.exports = grammar({
     address_literal: $ => /0x[a-fA-F0-9]+/,
     bool_literal: $ => choice('true', 'false'),
     num_literal: $ => /[0-9][0-9]*(?:u8|u64|u128)?/,
-    byte_string_literal: $ => /x".*?"/,
+    // TODO: tree-sitter not support ".*?"
+    byte_string_literal: $ => /x"[0-9a-fA-F]*"/,
 
-
-    //// Fields and Bindings
-    exp_field: $ => seq(
-      field('field', $._field_identifier),
-      optional(seq(
-        ':',
-        field('exp', $._expression)
-      ))
-    ),
-
-    // The bindlist is enclosed in parenthesis, except that the parenthesis are
-    // optional if there is a single Bind.
-    bind_list: $ => seq(
-      '(',
-      sepBy(',', $._bind),
-      ')'
-    ),
-    bind_unpack: $ => seq(
-      field('ty', $._struct_type),
-      field('bind_fields', $.bind_fields),
-    ),
-
-    _bind: $ => choice(
-      $.bind_unpack,
-      alias($._variable_identifier, $.bind_var),
-    ),
-
-    bind_fields: $ => seq(
-      '{', sepBy(',', $.bind_field), '}'
-    ),
-    bind_field: $ => choice(
-      $._field_identifier, // direct bind
-      seq(
-        field('field', $._field_identifier),
-        ':',
-        field('bind', $._bind)),
-    ),
-
-    //// Fields and Bindings - End
-
-    type_parameters: $ => seq('<', sepBy(',', $.type_parameter), '>'),
-
-    // parse use declaration
-    use_decl: $ => seq(
-      $.use_keyword,
-      field('address', $.address_literal),
-      '::',
-      field('module', $._module_identifier),
-      optional(seq($.as_keyword, field('as', $._module_identifier))),
-      ';'
-    ),
-
-    _module_path_prefix: $ => seq(
-      optional(seq(field('address', $.address_literal), '::')),
-      field('module', $._module_identifier), '::'
-    ),
 
     _module_identifier: $ => alias($.identifier, $.module_identifier),
     _struct_identifier: $ => alias($.identifier, $.struct_identifier),

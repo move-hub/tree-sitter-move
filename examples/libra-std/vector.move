@@ -1,29 +1,7 @@
-address 0x0:
+address 0x0 {
 
 // A variable-sized container that can hold both unrestricted types and resources.
 module Vector {
-    spec module {
-        // Auxiliary function to check if `v1` is equal to the result of adding `e` at the end of `v2`
-        define eq_push_back<Element>(v1: vector<Element>, v2: vector<Element>, e: Element): bool {
-            len(v1) == len(v2) + 1 &&
-            v1[len(v1)-1] == e &&
-            v1[0..len(v1)-1] == v2[0..len(v2)]
-        }
-
-        // Auxiliary function to check if `v1` is equal to the result of removing the first element of `v2`
-        define eq_pop_front<Element>(v1: vector<Element>, v2: vector<Element>): bool {
-            len(v1) + 1 == len(v2) &&
-            v1 == v2[1..len(v2)]
-        }
-
-        // Auxiliary function to check if `v` is equal to the result of concatenating `v1` and `v2`
-        define eq_append<Element>(v: vector<Element>, v1: vector<Element>, v2: vector<Element>): bool {
-            len(v) == len(v1) + len(v2) &&
-            v[0..len(v1)] == v1 &&
-            v[len(v1)..len(v)] == v2
-        }
-    }
-
     native public fun empty<Element>(): vector<Element>;
 
     // Return the length of the vector.
@@ -46,6 +24,13 @@ module Vector {
 
     // Swaps the elements at the i'th and j'th indices in the vector.
     native public fun swap<Element>(v: &mut vector<Element>, i: u64, j: u64);
+
+    // Return an vector of size one containing `e`
+    public fun singleton<Element>(e: Element): vector<Element> {
+        let v = empty();
+        push_back(&mut v, e);
+        v
+    }
 
     // Reverses the order of the elements in the vector in place.
     public fun reverse<Element>(v: &mut vector<Element>) {
@@ -84,6 +69,19 @@ module Vector {
         false
     }
 
+    // Return (true, i) if `e` is in the vector `v` at index `i`.
+    // Otherwise returns (false, 0).
+    public fun index_of<Element>(v: &vector<Element>, e: &Element): (bool, u64) {
+        let i = 0;
+        let len = length(v);
+        while (i < len) {
+            if (borrow(v, i) == e) return (true, i);
+            i = i + 1;
+        };
+        (false, 0)
+    }
+
+
     // Remove the `i`th element E of the vector, shifting all subsequent elements
     // It is O(n) and preserves ordering
     public fun remove<Element>(v: &mut vector<Element>, i: u64): Element {
@@ -104,4 +102,38 @@ module Vector {
         swap(v, i, last_idx);
         pop_back(v)
     }
+
+    // ------------------------------------------------------------------------
+    // Specification
+    // ------------------------------------------------------------------------
+
+    spec fun reverse {
+        pragma intrinsic = true;
+    }
+
+    spec fun append {
+        pragma intrinsic = true;
+    }
+
+    spec fun is_empty {
+        pragma intrinsic = true;
+    }
+
+    spec fun contains {
+        pragma intrinsic = true;
+    }
+
+    spec fun index_of {
+        pragma intrinsic = true;
+    }
+
+    spec fun remove {
+        pragma intrinsic = true;
+    }
+
+    spec fun swap_remove {
+        pragma intrinsic = true;
+    }
+}
+
 }

@@ -1,17 +1,4 @@
-// dep: tests/sources/stdlib/modules/libra_account.move
-// dep: tests/sources/stdlib/modules/hash.move
-// dep: tests/sources/stdlib/modules/lbr.move
-// dep: tests/sources/stdlib/modules/lcs.move
-// dep: tests/sources/stdlib/modules/libra.move
-// dep: tests/sources/stdlib/modules/libra_transaction_timeout.move
-// dep: tests/sources/stdlib/modules/transaction.move
-// dep: tests/sources/stdlib/modules/vector.move
-// dep: tests/sources/stdlib/modules/libra_time.move
-// dep: tests/sources/stdlib/modules/libra_system.move
-// dep: tests/sources/stdlib/modules/validator_config.move
-// no-verify
-
-address 0x0:
+address 0x0 {
 
 module TransactionFee {
     use 0x0::LibraAccount;
@@ -41,7 +28,7 @@ module TransactionFee {
     // height in order to ensure that we don't try to pay more than once per-block. We also
     // encapsulate the withdrawal capability to the transaction fee account so that we can withdraw
     // the fees from this account from block metadata transactions.
-    fun initialize_transaction_fees() {
+    public fun initialize_transaction_fees() {
         Transaction::assert(Transaction::sender() == 0xFEE, 0);
         move_to_sender<TransactionFees>(TransactionFees {
             fee_withdrawal_capability: LibraAccount::extract_sender_withdrawal_capability(),
@@ -78,7 +65,7 @@ module TransactionFee {
     // validator.
     fun distribute_transaction_fees_internal<Token>(
         amount_to_distribute_per_validator: u64,
-        num_validators: u64
+        num_validators: u64,
     ) acquires TransactionFees {
         let distribution_resource = borrow_global<TransactionFees>(0xFEE);
         let index = 0;
@@ -91,10 +78,10 @@ module TransactionFee {
 
             LibraAccount::pay_from_capability<Token>(
                 addr,
-                x"",
                 &distribution_resource.fee_withdrawal_capability,
                 amount_to_distribute_per_validator,
                 x"",
+                x""
             );
            }
     }
@@ -110,4 +97,5 @@ module TransactionFee {
         Transaction::assert(validator_payout * num_validators <= amount_collected, 1);
         validator_payout
     }
+}
 }

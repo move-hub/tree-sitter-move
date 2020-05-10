@@ -1,6 +1,4 @@
-// dep: tests/sources/stdlib/modules/transaction.move
-
-address 0x0:
+address 0x0 {
 
 module LibraTimestamp {
     use 0x0::Transaction;
@@ -45,4 +43,6 @@ module LibraTimestamp {
     public fun is_genesis(): bool {
         !::exists<Self::CurrentTimeMicroseconds>(0xA550C18)
     }
+}
+
 }

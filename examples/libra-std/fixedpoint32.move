@@ -1,8 +1,4 @@
-// dep: tests/sources/stdlib/modules/transaction.move
-// requires shift-left and shift-right which are currently not implemented in prelude
-// no-verify
-
-address 0x0:
+address 0x0 {
 
 module FixedPoint32 {
     use 0x0::Transaction;
@@ -78,4 +74,6 @@ module FixedPoint32 {
     public fun get_raw_value(num: T): u64 {
         num.value
     }
+}
+
 }

@@ -1,22 +1,8 @@
-// dep: tests/sources/stdlib/modules/libra.move
-// dep: tests/sources/stdlib/modules/vector.move
-// dep: tests/sources/stdlib/modules/lbr.move
-// dep: tests/sources/stdlib/modules/libra_account.move
-// dep: tests/sources/stdlib/modules/libra_system.move
-// dep: tests/sources/stdlib/modules/libra_time.move
-// dep: tests/sources/stdlib/modules/transaction.move
-// dep: tests/sources/stdlib/modules/transaction_fee.move
-// dep: tests/sources/stdlib/modules/validator_config.move
-// dep: tests/sources/stdlib/modules/hash.move
-// dep: tests/sources/stdlib/modules/lcs.move
-// dep: tests/sources/stdlib/modules/libra_transaction_timeout.move
-// no-verify
-
-address 0x0:
+address 0x0 {
 
 module LibraBlock {
     use 0x0::LBR;
-    use 0x0::LibraAccount;
+    use 0x0::Event;
     use 0x0::LibraSystem;
     use 0x0::LibraTimestamp;
     use 0x0::Transaction;
@@ -27,7 +13,7 @@ module LibraBlock {
       // TODO: should we keep the height?
       height: u64,
       // Handle where events with the time of new blocks are emitted
-      new_block_events: LibraAccount::EventHandle<Self::NewBlockEvent>,
+      new_block_events: Event::EventHandle<Self::NewBlockEvent>,
     }
 
     struct NewBlockEvent {
@@ -47,7 +33,7 @@ module LibraBlock {
 
       move_to_sender<BlockMetadata>(BlockMetadata {
         height: 0,
-        new_block_events: LibraAccount::new_event_handle<Self::NewBlockEvent>(),
+        new_block_events: Event::new_event_handle<Self::NewBlockEvent>(),
       });
     }
 
@@ -62,14 +48,18 @@ module LibraBlock {
         previous_block_votes: vector<address>,
         proposer: address
     ) acquires BlockMetadata {
-      // Can only be invoked by LibraVM privilege.
-      Transaction::assert(Transaction::sender() == 0x0, 33);
+        // Can only be invoked by LibraVM privilege.
+        Transaction::assert(Transaction::sender() == 0x0, 33);
 
-      process_block_prologue(round, timestamp, previous_block_votes, proposer);
+        process_block_prologue(round, timestamp, previous_block_votes, proposer);
 
-      // Currently distribute once per-block.
-      // TODO: Once we have a better on-chain representation of epochs we will make this per-epoch.
-      TransactionFee::distribute_transaction_fees<LBR::T>();
+        // Currently distribute once per-block.
+        // TODO: Once we have a better on-chain representation of epochs we will make this per-epoch.
+        // TODO: Need to update this to allow per-currency transaction fee
+        // distribution
+        TransactionFee::distribute_transaction_fees<LBR::T>();
+
+        // TODO(valerini): call regular reconfiguration here LibraSystem2::update_all_validator_info()
     }
 
     // Update the BlockMetadata resource with the new blockmetada coming from the consensus.
@@ -85,7 +75,7 @@ module LibraBlock {
         if(proposer != 0x0) Transaction::assert(LibraSystem::is_validator(proposer), 5002);
         LibraTimestamp::update_global_time(proposer, timestamp);
         block_metadata_ref.height = block_metadata_ref.height + 1;
-        LibraAccount::emit_event<NewBlockEvent>(
+        Event::emit_event<NewBlockEvent>(
           &mut block_metadata_ref.new_block_events,
           NewBlockEvent {
             round: round,
@@ -100,4 +90,6 @@ module LibraBlock {
     public fun get_current_block_height(): u64 acquires BlockMetadata {
       borrow_global<BlockMetadata>(0xA550C18).height
     }
+}
+
 }
