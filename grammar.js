@@ -80,11 +80,22 @@ module.exports = grammar({
     use_decl: $ => seq(
       $.use_keyword,
       $.module_ident,
-      optional(seq(
-        $.as_keyword,
-        field('as', $._module_identifier)
-      )),
+      optional(
+        choice(
+          $._use_alias, // use moudle
+          seq('::', $.use_member), // use module member
+          seq('::', '{', sepBy1(',', $.use_member), '}') // use multi module members
+        )
+      ),
       ';'
+    ),
+    use_member: $ => seq(
+      field('member', $.identifier),
+      optional($._use_alias),
+    ),
+    _use_alias: $ => seq(
+      $.as_keyword,
+      field('as', $._module_identifier)
     ),
 
 
@@ -98,8 +109,8 @@ module.exports = grammar({
     module_body: $ => {
       return seq(
         '{',
-        repeat($.use_decl),
         repeat(choice(
+          $.use_decl,
           $._function_definition,
           $._struct_definition,
           $.spec_block,

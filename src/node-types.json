@@ -4982,6 +4982,46 @@
         {
           "type": "use_keyword",
           "named": true
+        },
+        {
+          "type": "use_member",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "use_member",
+    "named": true,
+    "fields": {
+      "as": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "module_identifier",
+            "named": true
+          }
+        ]
+      },
+      "member": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "as_keyword",
+          "named": true
         }
       ]
     }
