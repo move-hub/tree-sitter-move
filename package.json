@@ -1,6 +1,6 @@
 {
-  "name": "@nonsense1984/tree-sitter-move",
-  "version": "0.1.0",
+  "name": "@move-hub/tree-sitter-move",
+  "version": "0.2.0",
   "description": "move grammar for tree-sitter",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/nonsense1984/tree-sitter-move.git"
+    "url": "git://github.com/move-hub/tree-sitter-move.git"
   },
   "keywords": [
     "parser",
@@ -21,9 +21,9 @@
   "author": "nonsense1984 <nonsense0202@pm.me>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nonsense1984/tree-sitter-move/issues"
+    "url": "https://github.com/move-hub/tree-sitter-move/issues"
   },
-  "homepage": "https://github.com/nonsense1984/tree-sitter-move",
+  "homepage": "https://github.com/move-hub/tree-sitter-move",
   "dependencies": {
     "nan": "^2.14.0"
   },
