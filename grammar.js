@@ -301,6 +301,7 @@ module.exports = grammar({
       'u128',
       'bool',
       'address',
+      'signer',
       'bytearray',
     ),
     module_access: $ => choice(

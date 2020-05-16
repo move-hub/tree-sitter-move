@@ -5645,6 +5645,10 @@
     "named": false
   },
   {
+    "type": "signer",
+    "named": false
+  },
+  {
     "type": "spec_cond",
     "named": true
   },
