@@ -1,5 +1,5 @@
 ====
-_literal_value
+literal_value
 ====
 
 1u8;
@@ -16,7 +16,6 @@ false;
 
 x"";
 x"abc";
-x"\n";
 
 ---
 
@@ -30,6 +29,5 @@ x"\n";
   (address_literal)
   (bool_literal)
   (bool_literal)
-  (byte_string_literal)
   (byte_string_literal)
   (byte_string_literal))

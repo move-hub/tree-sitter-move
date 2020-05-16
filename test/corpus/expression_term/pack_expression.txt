@@ -1,0 +1,61 @@
+====
+pack_expression
+====
+
+S {};
+M::S {f1};
+0x1::M::S {f1: exp1};
+S<A,B> {
+  f1: exp1,
+  f2: exp2,
+};
+
+----
+(source_file
+  (pack_expression
+    (name_expression
+      (module_access
+        (identifier)))
+    body: (field_initialize_list))
+  (pack_expression
+    (name_expression
+      (module_access
+        module: (module_identifier)
+        (identifier)))
+    body: (field_initialize_list
+      (exp_field
+        field: (field_identifier))))
+  (pack_expression
+    (name_expression
+      (module_access
+        address: (address_literal)
+        module: (module_identifier)
+        (identifier)))
+    body: (field_initialize_list
+      (exp_field
+        field: (field_identifier)
+        exp: (name_expression
+          (module_access
+            (identifier))))))
+  (pack_expression
+    (name_expression
+      (module_access
+        (identifier))
+      type_arguments: (type_arguments
+        (apply_type
+          (module_access
+            (identifier)))
+        (apply_type
+          (module_access
+            (identifier)))))
+    body: (field_initialize_list
+      (exp_field
+        field: (field_identifier)
+        exp: (name_expression
+          (module_access
+            (identifier))))
+      (exp_field
+        field: (field_identifier)
+        exp: (name_expression
+          (module_access
+            (identifier)))))))

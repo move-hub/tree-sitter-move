@@ -1,0 +1,15 @@
+====
+script_block
+====
+
+script {
+  public fun test() {}
+}
+
+---
+(source_file
+  (script_block
+    (usual_function_definition
+      name: (function_identifier)
+      params: (func_params)
+      body: (block))))

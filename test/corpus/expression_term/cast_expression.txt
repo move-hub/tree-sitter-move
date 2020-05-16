@@ -1,0 +1,56 @@
+====
+cast_expression
+====
+
+(a as B);
+(a as &mut B);
+((a+b) as u64);
+((a+b) as vector<u8>);
+
+----
+(source_file
+  (cast_expression
+    exp: (name_expression
+      (module_access
+        (identifier)))
+    ty: (apply_type
+      (module_access
+        (identifier))))
+  (cast_expression
+    exp: (name_expression
+      (module_access
+        (identifier)))
+    ty: (ref_type
+      (apply_type
+        (module_access
+          (identifier)))))
+  (cast_expression
+    exp: (expression_list
+      (binary_expression
+        lhs: (name_expression
+          (module_access
+            (identifier)))
+        operator: (binary_operator)
+        rhs: (name_expression
+          (module_access
+            (identifier)))))
+    ty: (apply_type
+      (module_access
+        (identifier))))
+  (cast_expression
+    exp: (expression_list
+      (binary_expression
+        lhs: (name_expression
+          (module_access
+            (identifier)))
+        operator: (binary_operator)
+        rhs: (name_expression
+          (module_access
+            (identifier)))))
+    ty: (apply_type
+      (module_access
+        (identifier))
+      type_arguments: (type_arguments
+        (apply_type
+          (module_access
+            (identifier)))))))

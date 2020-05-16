@@ -1,0 +1,35 @@
+====
+function_type
+====
+let f: || A;
+let f: |B, A<B>| C;
+
+(source_file
+  (let_statement
+    (bind_list
+      (bind_var
+        (variable_identifier)))
+    type: (function_type
+      param_types: (function_type_params)
+      return_type: (apply_type
+        (module_access
+          (identifier)))))
+  (let_statement
+    (bind_list
+      (bind_var
+        (variable_identifier)))
+    type: (function_type
+      param_types: (function_type_params
+        (apply_type
+          (module_access
+            (identifier)))
+        (apply_type
+          (module_access
+            (identifier))
+          type_arguments: (type_arguments
+            (apply_type
+              (module_access
+                (identifier))))))
+      return_type: (apply_type
+        (module_access
+          (identifier))))))

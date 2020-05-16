@@ -2,66 +2,29 @@
 module_definition
 ====
 
-address 0x0:
-
 module LBR {
     use 0x0::Transaction;
-    use 0x0::Libra;
-
     struct T { }
-
+    use 0x0::Libra;
     public fun initialize() {
-        Transaction::assert(Transaction::sender() == 0xA550C18, 0);
-        Libra::register<T>();
     }
 }
 
 ----
-
 (source_file
-  (address_declaration
-    (address_keyword)
-    address: (address_literal))
   (module_definition
-    (module_keyword)
     name: (module_identifier)
-    body: (module_block
+    body: (module_body
       (use_decl
-        (use_keyword)
-        address: (address_literal)
-        module: (module_identifier))
-      (use_decl
-        (use_keyword)
-        address: (address_literal)
-        module: (module_identifier))
+          address: (address_literal)
+          module: (module_identifier))
       (struct_definition
-        (struct_keyword)
         name: (struct_identifier)
         fields: (struct_def_fields))
+      (use_decl
+          address: (address_literal)
+          module: (module_identifier))
       (usual_function_definition
-        (public_keyword)
-        (fun_keyword)
         name: (function_identifier)
         params: (func_params)
-        body: (block
-          (call_expression
-            function: (scoped_function_identifier
-              module: (module_identifier)
-              name: (function_identifier))
-            args: (arg_list
-              (binary_expression
-                lhs: (call_expression
-                  function: (scoped_function_identifier
-                    module: (module_identifier)
-                    name: (function_identifier))
-                  args: (arg_list))
-                operator: (binary_operator)
-                rhs: (address_literal))
-              (num_literal)))
-          (call_expression
-            function: (scoped_function_identifier
-              module: (module_identifier)
-              name: (function_identifier))
-            type_arguments: (type_arguments
-              (struct_identifier))
-            args: (arg_list)))))))
+        body: (block)))))

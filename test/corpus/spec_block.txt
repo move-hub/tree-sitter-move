@@ -1,169 +1,112 @@
 ====
-spec function_type
+spec_block
 ====
 spec module {
-  native define all<T>(x: SomeCollection<T>, predicate: |T, |T, SomeCollection<T>|bool|bool): bool;
 };
+spec fun abc {};
+spec struct T {};
+spec schema T<A, B> {};
+spec {};
 ----
 (source_file
   (spec_block
-    (spec_keyword)
-    (module_keyword)
-    body: (spec_body
-      (native_spec_function
-        (native_keyword)
-        (define_keyword)
-        name: (function_identifier)
-        type_params: (type_parameters
-          (type_parameter
-            (type_parameter_identifier)))
-        params: (func_params
-          (function_parameter
-            name: (variable_identifier)
-            type: (generic_struct_type
-              struct: (struct_identifier)
-              type_arguments: (type_arguments
-                (struct_identifier))))
-          (function_parameter
-            name: (variable_identifier)
-            type: (function_type
-              param_types: (function_type_params
-                (struct_identifier)
-                (function_type
-                  param_types: (function_type_params
-                    (struct_identifier)
-                    (generic_struct_type
-                      struct: (struct_identifier)
-                      type_arguments: (type_arguments
-                        (struct_identifier))))
-                  return_type: (primative_type)))
-              return_type: (primative_type))))
-        return_type: (primative_type)))))
-
-====
-spec lambda expression
-====
-
-spec module {
-  define any():u8 {
-    let _ = |z| z + 1;
-    let _ = x .. y;
-    let _ = || x +1;
-  }
-};
----
-(source_file
+    body: (spec_body))
   (spec_block
-    (spec_keyword)
-    (module_keyword)
-    body: (spec_body
-      (usual_spec_function
-        (define_keyword)
-        name: (function_identifier)
-        params: (func_params)
-        return_type: (primative_type)
-        body: (block
-          (let_var_statement
-            (let_keyword)
-            variable: (variable_identifier)
-            exp: (lambda_expression
-              bindings: (lambda_bindings
-                (bind_var
-                  (variable_identifier)))
-              exp: (binary_expression
-                lhs: (variable_identifier)
-                operator: (binary_operator)
-                rhs: (num_literal))))
-          (let_var_statement
-            (let_keyword)
-            variable: (variable_identifier)
-            exp: (binary_expression
-              lhs: (variable_identifier)
-              operator: (binary_operator)
-              rhs: (variable_identifier)))
-          (let_var_statement
-            (let_keyword)
-            variable: (variable_identifier)
-            exp: (lambda_expression
-              bindings: (lambda_bindings)
-              exp: (binary_expression
-                lhs: (variable_identifier)
-                operator: (binary_operator)
-                rhs: (num_literal)))))))))
-
+    (function_identifier)
+    body: (spec_body))
+  (spec_block
+    (struct_identifier)
+    body: (spec_body))
+  (spec_block
+    (struct_identifier)
+    type_parameters: (type_parameters
+      (type_parameter
+        (type_parameter_identifier))
+      (type_parameter
+        (type_parameter_identifier)))
+    body: (spec_body))
+  (spec_block
+    body: (spec_body)))
 
 ====
-spec block
+spec_block_member
 ====
-
 spec {
-};
-
-spec fun test_spec {
-};
-spec struct Sp {
-};
-spec module {
-};
-
-spec {
-  use 0x0::M;
-  assert 1==1;
   invariant update a + 1;
+  assert 1==1;
+  ensures a > 1;
+  include a;
+  apply a to Hello*World<T,B>;
+  apply b to World* except Worlda*, Worldbc;
+  pragma a=1, b=2;
   global b: u8;
-
   define spec_func<A, B>(a: A, b: B): C {}
   native define spec_native_func(): C;
 };
 
-
 ----
 (source_file
   (spec_block
-    (spec_keyword)
-    body: (spec_body))
-  (spec_block
-    (spec_keyword)
-    (fun_keyword)
-    (function_identifier)
-    body: (spec_body))
-  (spec_block
-    (spec_keyword)
-    (struct_keyword)
-    (struct_identifier)
-    body: (spec_body))
-  (spec_block
-    (spec_keyword)
-    (module_keyword)
-    body: (spec_body))
-  (spec_block
-    (spec_keyword)
     body: (spec_body
-      (use_decl
-        (use_keyword)
-        address: (address_literal)
-        module: (module_identifier))
+      (spec_invariant
+        (binary_expression
+          lhs: (name_expression
+            (module_access
+              (identifier)))
+          operator: (binary_operator)
+          rhs: (num_literal)))
       (spec_condition
-        (spec_cond)
         (binary_expression
           lhs: (num_literal)
           operator: (binary_operator)
           rhs: (num_literal)))
-      (spec_invariant
-        (invariant_keyword)
-        (invariant_op)
+      (spec_condition
         (binary_expression
-          lhs: (variable_identifier)
+          lhs: (name_expression
+            (module_access
+              (identifier)))
           operator: (binary_operator)
           rhs: (num_literal)))
+      (spec_include
+        (name_expression
+          (module_access
+            (identifier))))
+      (spec_apply
+        exp: (name_expression
+          (module_access
+            (identifier)))
+        (spec_apply_pattern
+          name_pattern: (spec_apply_name_pattern)
+          type_parameters: (type_parameters
+            (type_parameter
+              (type_parameter_identifier))
+            (type_parameter
+              (type_parameter_identifier)))))
+      (spec_apply
+        exp: (name_expression
+          (module_access
+            (identifier)))
+        (spec_apply_pattern
+          name_pattern: (spec_apply_name_pattern))
+        (spec_apply_pattern
+          name_pattern: (spec_apply_name_pattern))
+        (spec_apply_pattern
+          name_pattern: (spec_apply_name_pattern)))
+      (spec_pragma
+        (spec_pragma_property
+          (identifier)
+          (num_literal))
+        (spec_pragma_property
+          (identifier)
+          (num_literal)))
       (spec_variable
-        (global_keyword)
-        name: (variable_identifier)
-        type: (primative_type))
+        name: (identifier)
+        type: (apply_type
+          (module_access
+            (identifier))))
       (usual_spec_function
-        (define_keyword)
         name: (function_identifier)
-        type_params: (type_parameters
+        type_parameters: (type_parameters
           (type_parameter
             (type_parameter_identifier))
           (type_parameter
@@ -171,15 +114,21 @@ spec {
         params: (func_params
           (function_parameter
             name: (variable_identifier)
-            type: (struct_identifier))
+            type: (apply_type
+              (module_access
+                (identifier))))
           (function_parameter
             name: (variable_identifier)
-            type: (struct_identifier)))
-        return_type: (struct_identifier)
+            type: (apply_type
+              (module_access
+                (identifier)))))
+        return_type: (apply_type
+          (module_access
+            (identifier)))
         body: (block))
       (native_spec_function
-        (native_keyword)
-        (define_keyword)
         name: (function_identifier)
         params: (func_params)
-        return_type: (struct_identifier)))))
+        return_type: (apply_type
+          (module_access
+            (identifier)))))))

@@ -1,108 +1,135 @@
 ====
-while_expression with expression
+while_expression
 ====
 
 while (i < len) swap(v, i, { i = i + 1; i });
-----
-(source_file
-  (while_expression
-    (while_keyword)
-    eb: (binary_expression
-      lhs: (variable_identifier)
-      operator: (binary_operator)
-      rhs: (variable_identifier))
-    body: (call_expression
-      function: (function_identifier)
-      args: (arg_list
-        (variable_identifier)
-        (variable_identifier)
-        (block
-          (assign_expression
-            lhs: (variable_identifier)
-            rhs: (binary_expression
-              lhs: (variable_identifier)
-              operator: (binary_operator)
-              rhs: (num_literal)))
-          (variable_identifier))))))
-
-====
-while_expression with block
-====
 
 while (i < len) {
   swap(v, i);
 };
-----
-(source_file
-  (while_expression
-    (while_keyword)
-    eb: (binary_expression
-      lhs: (variable_identifier)
-      operator: (binary_operator)
-      rhs: (variable_identifier))
-    body: (block
-      (call_expression
-        function: (function_identifier)
-        args: (arg_list
-          (variable_identifier)
-          (variable_identifier))))))
-
-====
-while_expression with nest_while
-====
 
 while (i < len)
   while (i==len)
     swap(v, i);
 
-----
-(source_file
-  (while_expression
-    (while_keyword)
-    eb: (binary_expression
-      lhs: (variable_identifier)
-      operator: (binary_operator)
-      rhs: (variable_identifier))
-    body: (while_expression
-      (while_keyword)
-      eb: (binary_expression
-        lhs: (variable_identifier)
-        operator: (binary_operator)
-        rhs: (variable_identifier))
-      body: (call_expression
-        function: (function_identifier)
-        args: (arg_list
-          (variable_identifier)
-          (variable_identifier))))))
-
-
-====
-while_expression with nest_while_block
-====
-
 while (i < len)
   while (i==len) {
     swap(v, i);
   };
-
 ----
 
 (source_file
   (while_expression
-    (while_keyword)
     eb: (binary_expression
-      lhs: (variable_identifier)
+      lhs: (name_expression
+        (module_access
+          (identifier)))
       operator: (binary_operator)
-      rhs: (variable_identifier))
+      rhs: (name_expression
+        (module_access
+          (identifier))))
+    body: (call_expression
+      (name_expression
+        (module_access
+          (identifier)))
+      args: (arg_list
+        (name_expression
+          (module_access
+            (identifier)))
+        (name_expression
+          (module_access
+            (identifier)))
+        (block
+          (assign_expression
+            lhs: (name_expression
+              (module_access
+                (identifier)))
+            rhs: (binary_expression
+              lhs: (name_expression
+                (module_access
+                  (identifier)))
+              operator: (binary_operator)
+              rhs: (num_literal)))
+          (name_expression
+            (module_access
+              (identifier)))))))
+  (while_expression
+    eb: (binary_expression
+      lhs: (name_expression
+        (module_access
+          (identifier)))
+      operator: (binary_operator)
+      rhs: (name_expression
+        (module_access
+          (identifier))))
+    body: (block
+      (call_expression
+        (name_expression
+          (module_access
+            (identifier)))
+        args: (arg_list
+          (name_expression
+            (module_access
+              (identifier)))
+          (name_expression
+            (module_access
+              (identifier)))))))
+  (while_expression
+    eb: (binary_expression
+      lhs: (name_expression
+        (module_access
+          (identifier)))
+      operator: (binary_operator)
+      rhs: (name_expression
+        (module_access
+          (identifier))))
     body: (while_expression
-      (while_keyword)
       eb: (binary_expression
-        lhs: (variable_identifier)
+        lhs: (name_expression
+          (module_access
+            (identifier)))
         operator: (binary_operator)
-        rhs: (variable_identifier))
+        rhs: (name_expression
+          (module_access
+            (identifier))))
+      body: (call_expression
+        (name_expression
+          (module_access
+            (identifier)))
+        args: (arg_list
+          (name_expression
+            (module_access
+              (identifier)))
+          (name_expression
+            (module_access
+              (identifier)))))))
+  (while_expression
+    eb: (binary_expression
+      lhs: (name_expression
+        (module_access
+          (identifier)))
+      operator: (binary_operator)
+      rhs: (name_expression
+        (module_access
+          (identifier))))
+    body: (while_expression
+      eb: (binary_expression
+        lhs: (name_expression
+          (module_access
+            (identifier)))
+        operator: (binary_operator)
+        rhs: (name_expression
+          (module_access
+            (identifier))))
       body: (block
         (call_expression
-          function: (function_identifier)
+          (name_expression
+            (module_access
+              (identifier)))
           args: (arg_list
-            (variable_identifier)
-            (variable_identifier)))))))
+            (name_expression
+              (module_access
+                (identifier)))
+            (name_expression
+              (module_access
+                (identifier)))))))))

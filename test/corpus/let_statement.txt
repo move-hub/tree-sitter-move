@@ -1,0 +1,77 @@
+
+====
+let_statement
+====
+
+let a: A;
+let a: A = 10;
+let a = 10;
+let (a, b) = (10, 12);
+let A{a}: A = 10;
+let A{b: B{b: bb}, c}: A = 10;
+
+---
+(source_file
+  (let_statement
+    binds: (bind_list
+      (bind_var
+        (variable_identifier)))
+    type: (apply_type
+      (module_access
+        (identifier))))
+  (let_statement
+    binds: (bind_list
+      (bind_var
+        (variable_identifier)))
+    type: (apply_type
+      (module_access
+        (identifier)))
+    exp: (num_literal))
+  (let_statement
+    binds: (bind_list
+      (bind_var
+        (variable_identifier)))
+    exp: (num_literal))
+  (let_statement
+    binds: (bind_list
+      (bind_var
+        (variable_identifier))
+      (bind_var
+        (variable_identifier)))
+    exp: (expression_list
+      (num_literal)
+      (num_literal)))
+  (let_statement
+    binds: (bind_list
+      (bind_unpack
+        (module_access
+          (identifier))
+        bind_fields: (bind_fields
+          (bind_field
+            field: (field_identifier)))))
+    type: (apply_type
+      (module_access
+        (identifier)))
+    exp: (num_literal))
+  (let_statement
+    binds: (bind_list
+      (bind_unpack
+        (module_access
+          (identifier))
+        bind_fields: (bind_fields
+          (bind_field
+            field: (field_identifier)
+            bind: (bind_unpack
+              (module_access
+                (identifier))
+              bind_fields: (bind_fields
+                (bind_field
+                  field: (field_identifier)
+                  bind: (bind_var
+                    (variable_identifier))))))
+          (bind_field
+            field: (field_identifier)))))
+    type: (apply_type
+      (module_access
+        (identifier)))
+    exp: (num_literal)))

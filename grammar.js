@@ -62,7 +62,7 @@ module.exports = grammar({
     ),
 
     address_block: $ => seq(
-      $.address_keyword,
+      'address',
       field('address', $.address_literal),
       "{",
       repeat($.module_definition),
@@ -78,8 +78,8 @@ module.exports = grammar({
     ),
     // parse use declaration
     use_decl: $ => seq(
-      $.use_keyword,
-      $.module_ident,
+      'use',
+      $._module_ident,
       optional(
         choice(
           $._use_alias, // use moudle
@@ -94,14 +94,14 @@ module.exports = grammar({
       optional($._use_alias),
     ),
     _use_alias: $ => seq(
-      $.as_keyword,
+      'as',
       field('as', $._module_identifier)
     ),
 
 
     module_definition: $ => {
       return seq(
-        $.module_keyword,
+        'module',
         field('name', $._module_identifier),
         field('body', $.module_body),
       );
@@ -124,7 +124,7 @@ module.exports = grammar({
       $.struct_definition,
     ),
     native_struct_definition: $ => seq(
-      $.native_keyword,
+      'native',
       $._struct_signature,
       ';'
     ),
@@ -144,8 +144,8 @@ module.exports = grammar({
     ),
 
     _struct_signature: $ => seq(
-      optional($.resource_keyword),
-      $.struct_keyword,
+      optional('resource'),
+      'struct',
       field('name', $._struct_identifier),
       optional(field('type_parameters', $.type_parameters)),
     ),
@@ -155,7 +155,7 @@ module.exports = grammar({
       $.usual_function_definition,
     ),
     native_function_definition: $ => seq(
-      $.native_keyword,
+      'native',
       $._function_signature,
       ';'
     ),
@@ -164,10 +164,10 @@ module.exports = grammar({
       field('body', $.block)
     ),
     _function_signature: $ => seq(
-      optional($.public_keyword),
-      $.fun_keyword,
+      optional('public'),
+      'fun',
       field('name', $._function_identifier),
-      optional(field('type_params', $.type_parameters)),
+      optional(field('type_parameters', $.type_parameters)),
       field('params', $.func_params),
       optional(seq(':', field('return_type', $._type))),
       optional(field('acquires', $.resource_accquires)),
@@ -178,19 +178,19 @@ module.exports = grammar({
       ')',
     ),
     resource_accquires: $ => seq(
-      $.acquires_keyword, sepBy1(',', $.module_access)
+      'acquires', sepBy1(',', $.module_access)
     ),
 
     //// Spec block start
     spec_block: $ => seq(
-      $.spec_keyword,
+      'spec',
       optional(choice(
-        seq($.fun_keyword, $._function_identifier),
-        seq($.struct_keyword, $._struct_identifier),
-        $.module_keyword,
+        seq('fun', $._function_identifier),
+        seq('struct', $._struct_identifier),
+        'module',
         seq(
           'schema',
-          $.identifier,
+          $._struct_identifier,
           optional(field('type_parameters', $.type_parameters)),
         ),
       )),
@@ -213,16 +213,13 @@ module.exports = grammar({
       $.spec_variable
     ),
     spec_condition: $ => seq(
-      alias(
-        choice('assert', 'assume', 'decreases', 'aborts_if', 'ensures', 'requires'),
-        $.spec_cond,
-      ),
+      choice('assert', 'assume', 'decreases', 'aborts_if', 'ensures', 'requires'),
       $._expression,
       ';'
     ),
     spec_invariant: $ => seq(
-      $.invariant_keyword,
-      optional(alias(choice('update', 'pack', 'unpack'), $.invariant_op)),
+      'invariant',
+      optional(choice('update', 'pack', 'unpack')),
       $._expression,
       ';'
     ),
@@ -230,7 +227,7 @@ module.exports = grammar({
 
     spec_apply: $ => seq(
       'apply',
-      $._expression,
+      field('exp', $._expression),
       'to',
       sepBy1(',', $.spec_apply_pattern),
       optional(seq('except', sepBy1(',', $.spec_apply_pattern))),
@@ -238,11 +235,10 @@ module.exports = grammar({
     ),
     spec_apply_pattern: $ => seq(
       optional(choice('public', 'internal')),
-      $.spec_apply_fragment,
-      repeat($.spec_apply_fragment),
+      field('name_pattern', $.spec_apply_name_pattern),
       optional(field('type_parameters', $.type_parameters)),
     ),
-    spec_apply_fragment: $ => choice($.identifier, '*'),
+    spec_apply_name_pattern: $ => /[A-Za-z0-9*]+/,
 
     spec_pragma: $ => seq(
       'pragma',
@@ -266,13 +262,13 @@ module.exports = grammar({
     ),
 
     native_spec_function: $ => seq(
-      $.native_keyword,
-      $.define_keyword,
+      'native',
+      'define',
       $._spec_function_signature,
       ';'
     ),
     usual_spec_function: $ => seq(
-      $.define_keyword,
+      'define',
       $._spec_function_signature,
       field('body', $.block)
     ),
@@ -318,10 +314,10 @@ module.exports = grammar({
     module_access: $ => choice(
       $.identifier,
       seq('::', $.identifier),
-      seq($._module_identifier, '::', $.identifier),
-      seq($.module_ident, '::', $.identifier)
+      seq(field('module', $._module_identifier), '::', $.identifier),
+      seq($._module_ident, '::', $.identifier)
     ),
-    module_ident: $ => seq(
+    _module_ident: $ => seq(
       field('address', $.address_literal),
       '::',
       field('module', $._module_identifier)
@@ -350,7 +346,7 @@ module.exports = grammar({
     type_parameters: $ => seq('<', sepBy1(',', $.type_parameter), '>'),
     type_parameter: $ => seq(
       $._type_parameter_identifier,
-      optional(seq(':', choice($.copyable_keyword, $.resource_keyword)))
+      optional(seq(':', choice('copyable', 'resource')))
     ),
 
 
@@ -370,8 +366,8 @@ module.exports = grammar({
       ';'
     ),
     let_statement: $ => seq(
-      $.let_keyword,
-      $.bind_list,
+      'let',
+      field('binds', $.bind_list),
       optional(seq(':', field('type', $._type))),
       optional(seq('=', field('exp', $._expression)))
     ),
@@ -406,13 +402,13 @@ module.exports = grammar({
     /// if-else expression
     if_expression: $ => prec.right(
       seq(
-        $.if_keyword,
+        'if',
         '(',
         field('eb', $._expression),
         ')',
         field('et', $._expression),
         optional(seq(
-          $.else_keyword,
+          'else',
           field('ef', $._expression)
         )),
       )
@@ -420,7 +416,7 @@ module.exports = grammar({
 
     //// while expression
     while_expression: $ => seq(
-      $.while_keyword,
+      'while',
       '(',
       field('eb', $._expression),
       ')',
@@ -428,12 +424,12 @@ module.exports = grammar({
     ),
 
     //// loop expression
-    loop_expression: $ => seq($.loop_keyword, field('body', $._expression)),
+    loop_expression: $ => seq('loop', field('body', $._expression)),
 
     //// return expression
-    return_expression: $ => seq($.return_keyword, optional(field('return', $._expression))),
+    return_expression: $ => seq('return', optional(field('return', $._expression))),
     // abort expression
-    abort_expression: $ => seq($.abort_keyword, field('abort', $._expression)),
+    abort_expression: $ => seq('abort', field('abort', $._expression)),
 
     assign_expression: $ => prec.left(PREC.assign,
       seq(
@@ -446,7 +442,7 @@ module.exports = grammar({
     //      BinOpExp =
     //          <BinOpExp> <BinOp> <BinOpExp>
     //          | <UnaryExp>
-    _binary_op_expression: $ => choice(
+    _binary_operand: $ => choice(
       $._unary_expression,
       $.binary_expression,
     ),
@@ -476,9 +472,9 @@ module.exports = grammar({
 
       let binary_expression = choice(...table.map(
         ([precedence, operator]) => prec.left(precedence, seq(
-          field('lhs', $._binary_op_expression),
+          field('lhs', $._binary_operand),
           field('operator', alias(operator, $.binary_operator)),
-          field('rhs', $._binary_op_expression),
+          field('rhs', $._binary_operand),
         ))
       ));
 
@@ -496,7 +492,7 @@ module.exports = grammar({
       field('op', $.unary_op),
       field('exp', $._unary_expression)
     ),
-    unary_op: $ => token(choice('!')),
+    unary_op: $ => choice('!'),
 
     // dereference
     dereference_expression: $ => prec(PREC.unary, seq(
@@ -510,7 +506,7 @@ module.exports = grammar({
     )),
     // move or copy
     move_or_copy_expression: $ => prec(PREC.unary, seq(
-      choice($.move_keyword, $.copy_keyword),
+      choice('move', 'copy'),
       field('exp', $._variable_identifier),
     )),
 
@@ -530,8 +526,8 @@ module.exports = grammar({
       $.dot_expression,
       $.index_expression,
     ),
-    break_expression: $ => $.break_keyword,
-    continue_expression: $ => $.continue_keyword,
+    break_expression: $ => choice('break'),
+    continue_expression: $ => choice('continue'),
     _name_exp: $ => choice(
       $.name_expression,
       $.pack_expression,
@@ -566,7 +562,7 @@ module.exports = grammar({
     cast_expression: $ => seq(
       '(',
       field('exp', $._expression),
-      $.as_keyword,
+      'as',
       field('ty', $._type),
       ')'
     ),
@@ -620,12 +616,12 @@ module.exports = grammar({
     bind_fields: $ => seq(
       '{', sepBy(',', $.bind_field), '}'
     ),
-    bind_field: $ => choice(
-      $._field_identifier, // direct bind
-      seq(
-        field('field', $._field_identifier),
+    bind_field: $ => seq(
+      field('field', $._field_identifier), // direct bind
+      optional(seq(
         ':',
-        field('bind', $._bind)),
+        field('bind', $._bind)
+      ))
     ),
     //// Fields and Bindings - End
 
@@ -659,36 +655,6 @@ module.exports = grammar({
       '//', /.*/
     )),
 
-    /// keywords
-
-    fun_keyword: $ => 'fun',
-    address_keyword: $ => 'address',
-    module_keyword: $ => 'module',
-    struct_keyword: $ => 'struct',
-    as_keyword: $ => 'as',
-    use_keyword: $ => 'use',
-    acquires_keyword: $ => 'acquires',
-    public_keyword: $ => 'public',
-    native_keyword: $ => 'native',
-    resource_keyword: $ => 'resource',
-    copyable_keyword: $ => 'copyable',
-    let_keyword: $ => 'let',
-    move_keyword: $ => 'move',
-    copy_keyword: $ => 'copy',
-
-    if_keyword: $ => 'if',
-    else_keyword: $ => 'else',
-    while_keyword: $ => 'while',
-    loop_keyword: $ => 'loop',
-    return_keyword: $ => 'return',
-    abort_keyword: $ => 'abort',
-    continue_keyword: $ => 'continue',
-    break_keyword: $ => 'break',
-
-    spec_keyword: $ => 'spec',
-    invariant_keyword: $ => 'invariant',
-    global_keyword: $ => 'global',
-    define_keyword: $ => 'define',
   }
 });
 

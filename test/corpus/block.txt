@@ -1,68 +1,55 @@
 ====
-block_sequence
-====
-
-{
-    let T { public_key: _ } = move_from<T>(Transaction::sender())
-};
-
-----
-
-(source_file
-  (block
-    (let_unpack_statement
-      (let_keyword)
-      bind: (bind_unpack
-        ty: (struct_identifier)
-        bind_fields: (bind_fields
-          (bind_field
-            field: (field_identifier)
-            bind: (bind_var
-              (variable_identifier)))))
-      exp: (call_expression
-        function: (function_identifier)
-        type_arguments: (type_arguments
-          (struct_identifier))
-        args: (arg_list
-          (call_expression
-            function: (scoped_function_identifier
-              module: (module_identifier)
-              name: (function_identifier))
-            args: (arg_list)))))))
-
-====
 block
 ====
 
 {
-    Transaction::assert(timestamp == global_timer.microseconds, 5001);
-    Transaction::assert(global_timer.microseconds < timestamp, 5001)
+  let a = 1;
+  a = a+ 1;
+  a
+};
+
+{
+  let a = 1;
+  let (a,b) = (1,3);
+  a;
 };
 
 ----
 (source_file
   (block
-    (call_expression
-      function: (scoped_function_identifier
-        module: (module_identifier)
-        name: (function_identifier))
-      args: (arg_list
-        (binary_expression
-          lhs: (variable_identifier)
-          operator: (binary_operator)
-          rhs: (dot_expression
-            e: (variable_identifier)
-            f: (field_identifier)))
+    (let_statement
+      binds: (bind_list
+        (bind_var
+          (variable_identifier)))
+      exp: (num_literal))
+    (assign_expression
+      lhs: (name_expression
+        (module_access
+          (identifier)))
+      rhs: (binary_expression
+        lhs: (name_expression
+          (module_access
+            (identifier)))
+        operator: (binary_operator)
+        rhs: (num_literal)))
+    (name_expression
+      (module_access
+        (identifier))))
+  (block
+    (let_statement
+      binds: (bind_list
+        (bind_var
+          (variable_identifier)))
+      exp: (num_literal))
+    (let_statement
+      binds: (bind_list
+        (bind_var
+          (variable_identifier))
+        (bind_var
+          (variable_identifier)))
+      exp: (expression_list
+        (num_literal)
         (num_literal)))
-    (call_expression
-      function: (scoped_function_identifier
-        module: (module_identifier)
-        name: (function_identifier))
-      args: (arg_list
-        (binary_expression
-          lhs: (dot_expression
-            e: (variable_identifier)
-            f: (field_identifier))
-          operator: (binary_operator)
-          rhs: (variable_identifier))
-        (num_literal)))))
+    (name_expression
+      (module_access
+        (identifier)))))

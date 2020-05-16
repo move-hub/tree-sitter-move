@@ -1,0 +1,41 @@
+====
+use_decl
+====
+
+use 0x0::A;
+use 0x0::A as AA;
+use 0x0::A::member1;
+use 0x0::A::member1 as m1;
+use 0x0::A::{member1 as m1, member2 as m2, member3};
+
+---
+(source_file
+  (use_decl
+      address: (address_literal)
+      module: (module_identifier))
+  (use_decl
+      address: (address_literal)
+      module: (module_identifier)
+    as: (module_identifier))
+  (use_decl
+      address: (address_literal)
+      module: (module_identifier)
+    (use_member
+      member: (identifier)))
+  (use_decl
+      address: (address_literal)
+      module: (module_identifier)
+    (use_member
+      member: (identifier)
+      as: (module_identifier)))
+  (use_decl
+      address: (address_literal)
+      module: (module_identifier)
+    (use_member
+      member: (identifier)
+      as: (module_identifier))
+    (use_member
+      member: (identifier)
+      as: (module_identifier))
+    (use_member
+      member: (identifier))))

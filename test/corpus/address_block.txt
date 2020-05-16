@@ -1,0 +1,11 @@
+====
+address_block
+====
+
+address 0x01 {
+}
+
+----
+(source_file
+  (address_block
+    address: (address_literal)))

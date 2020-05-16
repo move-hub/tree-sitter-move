@@ -1,0 +1,34 @@
+====
+index_expression
+====
+a[1];
+a[b];
+a.b[1].c[b];
+
+----
+(source_file
+  (index_expression
+    e: (name_expression
+      (module_access
+        (identifier)))
+    idx: (num_literal))
+  (index_expression
+    e: (name_expression
+      (module_access
+        (identifier)))
+    idx: (name_expression
+      (module_access
+        (identifier))))
+  (index_expression
+    e: (dot_expression
+      e: (index_expression
+        e: (dot_expression
+          e: (name_expression
+            (module_access
+              (identifier)))
+          f: (field_identifier))
+        idx: (num_literal))
+      f: (field_identifier))
+    idx: (name_expression
+      (module_access
+        (identifier)))))

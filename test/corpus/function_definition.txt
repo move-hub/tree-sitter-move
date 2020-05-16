@@ -1,43 +1,49 @@
+
 ====
 function_definition
 ====
 
+native public fun t<A>() acquires T;
+
 public fun deposit<Token>(payee: address, to_deposit: Libra::T<Token>) acquires T, Balance {
-    deposit_with_metadata(payee, to_deposit, x"")
 }
 
 ----
 
 (source_file
-  (usual_function_definition
-    (public_keyword)
-    (fun_keyword)
+  (native_function_definition
     name: (function_identifier)
-    type_params: (type_parameters
+    type_parameters: (type_parameters
+      (type_parameter
+        (type_parameter_identifier)))
+    params: (func_params)
+    acquires: (resource_accquires
+      (module_access
+        (identifier))))
+  (usual_function_definition
+    name: (function_identifier)
+    type_parameters: (type_parameters
       (type_parameter
         (type_parameter_identifier)))
     params: (func_params
       (function_parameter
         name: (variable_identifier)
-        type: (primative_type))
+        type: (apply_type
+          (module_access
+            (identifier))))
       (function_parameter
         name: (variable_identifier)
-        type: (generic_struct_type
-          struct: (scoped_struct_identifier
+        type: (apply_type
+          (module_access
             module: (module_identifier)
-            struct: (struct_identifier))
+            (identifier))
           type_arguments: (type_arguments
-            (struct_identifier)))))
+            (apply_type
+              (module_access
+                (identifier)))))))
     acquires: (resource_accquires
-      (acquires_keyword)
-      (struct_identity
-        struct: (struct_identifier))
-      (struct_identity
-        struct: (struct_identifier)))
-    body: (block
-      (call_expression
-        function: (function_identifier)
-        args: (arg_list
-          (variable_identifier)
-          (variable_identifier)
-          (byte_string_literal))))))
+      (module_access
+        (identifier))
+      (module_access
+        (identifier)))
+    body: (block)))
