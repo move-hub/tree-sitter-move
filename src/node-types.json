@@ -4005,7 +4005,22 @@
   {
     "type": "ref_type",
     "named": true,
-    "fields": {},
+    "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "&",
+            "named": false
+          },
+          {
+            "type": "&mut",
+            "named": false
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": false,
       "required": true,
