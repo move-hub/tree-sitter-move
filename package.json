@@ -7,7 +7,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "tree-sitter test"
+    "test": "tree-sitter test",
+    "parse-examples": "tree-sitter parse -q examples/**/*.move"
   },
   "repository": {
     "type": "git",

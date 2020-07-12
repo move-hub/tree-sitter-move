@@ -1,0 +1,46 @@
+name: Release Extension
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+
+jobs:
+  release:
+    name: Release New Version
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          registry-url: 'https://npm.pkg.github.com'
+      - run: npm install
+      - run: npm run test
+      - run: npm run parse-examples
+
+      # create release
+      - name: Set Release Tag Env
+        id: get_tag
+        run: echo ::set-env name=RELEASE_TAG::${GITHUB_REF#refs/*/}
+
+      - run: git fetch --depth=1 origin +refs/tags/${{ env.RELEASE_TAG }}:refs/tags/${{ env.RELEASE_TAG }}
+      - run: git for-each-ref --format="%(subject)%0a%0a%(body)" refs/tags/${{ env.RELEASE_TAG }} > body.md
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          release_name: Release ${{ env.RELEASE_TAG }}
+          body_path: body.md
+          draft: false
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+
+      # publish to npm
+      - run: npm publish
+        name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
