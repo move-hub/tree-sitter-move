@@ -1,6 +1,6 @@
 {
   "name": "@move-hub/tree-sitter-move",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "move grammar for tree-sitter",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
