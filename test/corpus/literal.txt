@@ -14,6 +14,9 @@ literal_value
 true;
 false;
 
+b"";
+b"Libra";
+b"Libra\n\tNetwork";
 x"";
 x"abc";
 
@@ -30,4 +33,7 @@ x"abc";
   (bool_literal)
   (bool_literal)
   (byte_string_literal)
-  (byte_string_literal))
+  (byte_string_literal)
+  (byte_string_literal)
+  (hex_string_literal)
+  (hex_string_literal))

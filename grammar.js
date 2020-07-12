@@ -39,11 +39,12 @@ const PREC = {
 
 module.exports = grammar({
   name: 'move',
-  extras: $ => [/\s/, $.line_comment],
+  extras: $ => [/\s/, $.line_comment, $.block_comment],
   conflicts: $ => [
     [$._struct_identifier, $._variable_identifier, $._function_identifier],
     [$._struct_identifier, $._function_identifier],
     [$.function_type_params],
+    // [$.name_expression, $.quantifier_expression],
     [$.name_expression],
   ],
 
@@ -72,6 +73,7 @@ module.exports = grammar({
       "script",
       "{",
       repeat($.use_decl),
+      repeat($.constant),
       $.usual_function_definition,
       repeat($.spec_block),
       "}"
@@ -111,6 +113,7 @@ module.exports = grammar({
         '{',
         repeat(choice(
           $.use_decl,
+          $.constant,
           $._function_definition,
           $._struct_definition,
           $.spec_block,
@@ -118,6 +121,8 @@ module.exports = grammar({
         '}'
       );
     },
+
+    constant: $ => seq('const', field('name', alias($.identifier, $.constant_identifier)), ':', field('type', $._type), '=', field('exp', $._expression), ";"),
 
     _struct_definition: $ => choice(
       $.native_struct_definition,
@@ -213,13 +218,16 @@ module.exports = grammar({
       $.spec_variable
     ),
     spec_condition: $ => seq(
-      choice('assert', 'assume', 'decreases', 'aborts_if', 'ensures', 'requires'),
+      choice(
+        'assert', 'assume', 'decreases', 'aborts_if', 'ensures', 'succeeds_if',
+        seq('requires', optional('module'))
+      ),
       $._expression,
       ';'
     ),
     spec_invariant: $ => seq(
       'invariant',
-      optional(choice('update', 'pack', 'unpack')),
+      optional(choice('update', 'pack', 'unpack', 'module')),
       $._expression,
       ';'
     ),
@@ -238,7 +246,7 @@ module.exports = grammar({
       field('name_pattern', $.spec_apply_name_pattern),
       optional(field('type_parameters', $.type_parameters)),
     ),
-    spec_apply_name_pattern: $ => /[A-Za-z0-9*]+/,
+    spec_apply_name_pattern: $ => /[0-9a-zA-Z_*]+/,
 
     spec_pragma: $ => seq(
       'pragma',
@@ -258,15 +266,12 @@ module.exports = grammar({
 
     _spec_function: $ => choice(
       $.native_spec_function,
-      $.usual_spec_function
+      $.usual_spec_function,
+      $.uninterpreted_spec_function,
     ),
 
-    native_spec_function: $ => seq(
-      'native',
-      'define',
-      $._spec_function_signature,
-      ';'
-    ),
+    uninterpreted_spec_function: $ => seq('define', $._spec_function_signature, ';'),
+    native_spec_function: $ => seq('native', 'define', $._spec_function_signature, ';'),
     usual_spec_function: $ => seq(
       'define',
       $._spec_function_signature,
@@ -313,7 +318,6 @@ module.exports = grammar({
     ),
     module_access: $ => choice(
       $.identifier,
-      seq('::', $.identifier),
       seq(field('module', $._module_identifier), '::', $.identifier),
       seq($._module_ident, '::', $.identifier)
     ),
@@ -354,6 +358,7 @@ module.exports = grammar({
 
     block: $ => seq(
       '{',
+      repeat($.use_decl),
       repeat($._block_item),
       optional(choice($._expression, $.let_statement)),
       '}'
@@ -388,8 +393,23 @@ module.exports = grammar({
       // unary expression is included in binary_op,
       $._unary_expression,
       $.binary_expression,
+      $.quantifier_expression
     ),
 
+    quantifier_expression: $ => seq(
+      // a hack to resolve conflict with module_access.
+      // TODO: make a better soluation.
+      token(/(forall|exists)[\s\n]/),
+      $.quantifier_bindings,
+      optional(seq('where', $._expression)),
+      ':',
+      $._expression
+    ),
+    quantifier_bindings: $ => sepBy1(',', $.quantifier_binding),
+    quantifier_binding: $ => choice(
+      seq($.identifier, ':', $._type),
+      seq($.identifier, 'in', $._expression)
+    ),
     lambda_expression: $ => seq(
       field('bindings', $.lambda_bindings),
       field('exp', $._expression)
@@ -533,7 +553,7 @@ module.exports = grammar({
       $.pack_expression,
       $.call_expression,
     ),
-    name_expression: $ => prec(-1, seq(
+    name_expression: $ => prec.dynamic(-1, seq(
       $.module_access,
       optional(field('type_arguments', $.type_arguments))
     )),
@@ -631,6 +651,7 @@ module.exports = grammar({
       $.address_literal,
       $.bool_literal,
       $.num_literal,
+      $.hex_string_literal,
       $.byte_string_literal,
 
     ),
@@ -638,7 +659,8 @@ module.exports = grammar({
     bool_literal: $ => choice('true', 'false'),
     num_literal: $ => /[0-9][0-9]*(?:u8|u64|u128)?/,
     // TODO: tree-sitter not support ".*?"
-    byte_string_literal: $ => /x"[0-9a-fA-F]*"/,
+    hex_string_literal: $ => /x"[0-9a-fA-F]*"/,
+    byte_string_literal: $ => /b"(\\.|[^\\"])*"/,
 
 
     _module_identifier: $ => alias($.identifier, $.module_identifier),
@@ -654,7 +676,12 @@ module.exports = grammar({
     line_comment: $ => token(seq(
       '//', /.*/
     )),
-
+    // http://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment/36328890#36328890
+    block_comment: $ => token(seq(
+      '/*',
+      /[^*]*\*+([^/*][^*]*\*+)*/,
+      '/'
+    ))
   }
 });
 
