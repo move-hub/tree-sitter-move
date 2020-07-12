@@ -1,9 +1,9 @@
 {
-  "name": "@move-hub/tree-sitter-move",
+  "name": "@movei/tree-sitter-move",
   "version": "0.2.1",
-  "description": "move grammar for tree-sitter",
+  "description": "move grammar in tree-sitter",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "registry": "https://registry.npmjs.org"
   },
   "main": "index.js",
   "scripts": {
