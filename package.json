@@ -3,6 +3,7 @@
   "version": "0.2.2",
   "description": "move grammar in tree-sitter",
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org"
   },
   "main": "index.js",
