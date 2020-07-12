@@ -37,7 +37,7 @@ jobs:
           prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
 
       # publish to npm
-      - run: npm publish
+      - run: npm publish --access public
         name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}

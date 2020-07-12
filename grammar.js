@@ -303,7 +303,7 @@ module.exports = grammar({
       optional(field('type_arguments', $.type_arguments)),
     ),
     ref_type: $ => seq(
-      choice('&', '&mut'),
+      field('mutable', choice('&', '&mut')),
       $._type
     ),
     tuple_type: $ => seq('(', sepBy1(',', $._type), ')'),
