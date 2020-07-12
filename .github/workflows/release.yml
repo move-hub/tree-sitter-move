@@ -1,4 +1,4 @@
-name: Release Extension
+name: Release New Version
 on:
   push:
     tags:
