@@ -72,6 +72,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -101,6 +105,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -226,6 +234,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -255,6 +267,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -402,6 +418,10 @@
           "named": true
         },
         {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
           "type": "if_expression",
           "named": true
         },
@@ -431,6 +451,10 @@
         },
         {
           "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
           "named": true
         },
         {
@@ -514,6 +538,10 @@
           },
           {
             "type": "expression_list",
+            "named": true
+          },
+          {
+            "type": "hex_string_literal",
             "named": true
           },
           {
@@ -619,6 +647,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -648,6 +680,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -736,6 +772,10 @@
           },
           {
             "type": "expression_list",
+            "named": true
+          },
+          {
+            "type": "hex_string_literal",
             "named": true
           },
           {
@@ -840,6 +880,10 @@
           },
           {
             "type": "expression_list",
+            "named": true
+          },
+          {
+            "type": "hex_string_literal",
             "named": true
           },
           {
@@ -1066,6 +1110,10 @@
           "named": true
         },
         {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
           "type": "if_expression",
           "named": true
         },
@@ -1102,6 +1150,10 @@
           "named": true
         },
         {
+          "type": "quantifier_expression",
+          "named": true
+        },
+        {
           "type": "return_expression",
           "named": true
         },
@@ -1115,6 +1167,10 @@
         },
         {
           "type": "unit_expression",
+          "named": true
+        },
+        {
+          "type": "use_decl",
           "named": true
         },
         {
@@ -1187,6 +1243,10 @@
           },
           {
             "type": "expression_list",
+            "named": true
+          },
+          {
+            "type": "hex_string_literal",
             "named": true
           },
           {
@@ -1329,6 +1389,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -1361,6 +1425,10 @@
             "named": true
           },
           {
+            "type": "quantifier_expression",
+            "named": true
+          },
+          {
             "type": "return_expression",
             "named": true
           },
@@ -1383,6 +1451,174 @@
         ]
       },
       "ty": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply_type",
+            "named": true
+          },
+          {
+            "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "ref_type",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "constant",
+    "named": true,
+    "fields": {
+      "exp": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "abort_expression",
+            "named": true
+          },
+          {
+            "type": "address_literal",
+            "named": true
+          },
+          {
+            "type": "annotate_expression",
+            "named": true
+          },
+          {
+            "type": "assign_expression",
+            "named": true
+          },
+          {
+            "type": "binary_expression",
+            "named": true
+          },
+          {
+            "type": "block",
+            "named": true
+          },
+          {
+            "type": "bool_literal",
+            "named": true
+          },
+          {
+            "type": "borrow_expression",
+            "named": true
+          },
+          {
+            "type": "break_expression",
+            "named": true
+          },
+          {
+            "type": "byte_string_literal",
+            "named": true
+          },
+          {
+            "type": "call_expression",
+            "named": true
+          },
+          {
+            "type": "cast_expression",
+            "named": true
+          },
+          {
+            "type": "continue_expression",
+            "named": true
+          },
+          {
+            "type": "dereference_expression",
+            "named": true
+          },
+          {
+            "type": "dot_expression",
+            "named": true
+          },
+          {
+            "type": "expression_list",
+            "named": true
+          },
+          {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
+            "type": "if_expression",
+            "named": true
+          },
+          {
+            "type": "index_expression",
+            "named": true
+          },
+          {
+            "type": "lambda_expression",
+            "named": true
+          },
+          {
+            "type": "loop_expression",
+            "named": true
+          },
+          {
+            "type": "move_or_copy_expression",
+            "named": true
+          },
+          {
+            "type": "name_expression",
+            "named": true
+          },
+          {
+            "type": "num_literal",
+            "named": true
+          },
+          {
+            "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
+            "named": true
+          },
+          {
+            "type": "return_expression",
+            "named": true
+          },
+          {
+            "type": "spec_block",
+            "named": true
+          },
+          {
+            "type": "unary_expression",
+            "named": true
+          },
+          {
+            "type": "unit_expression",
+            "named": true
+          },
+          {
+            "type": "while_expression",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "constant_identifier",
+            "named": true
+          }
+        ]
+      },
+      "type": {
         "multiple": false,
         "required": true,
         "types": [
@@ -1472,6 +1708,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "index_expression",
             "named": true
           },
@@ -1557,6 +1797,10 @@
           },
           {
             "type": "expression_list",
+            "named": true
+          },
+          {
+            "type": "hex_string_literal",
             "named": true
           },
           {
@@ -1670,6 +1914,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -1699,6 +1947,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -1808,6 +2060,10 @@
           "named": true
         },
         {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
           "type": "if_expression",
           "named": true
         },
@@ -1837,6 +2093,10 @@
         },
         {
           "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
           "named": true
         },
         {
@@ -2106,6 +2366,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -2135,6 +2399,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -2228,6 +2496,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -2257,6 +2529,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -2350,6 +2626,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -2379,6 +2659,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -2455,6 +2739,10 @@
           },
           {
             "type": "expression_list",
+            "named": true
+          },
+          {
+            "type": "hex_string_literal",
             "named": true
           },
           {
@@ -2552,6 +2840,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -2581,6 +2873,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -2709,6 +3005,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -2738,6 +3038,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -2847,6 +3151,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -2876,6 +3184,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -2997,6 +3309,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -3026,6 +3342,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -3096,6 +3416,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "constant",
+          "named": true
+        },
         {
           "type": "native_function_definition",
           "named": true
@@ -3370,6 +3694,315 @@
     }
   },
   {
+    "type": "quantifier_binding",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "abort_expression",
+          "named": true
+        },
+        {
+          "type": "address_literal",
+          "named": true
+        },
+        {
+          "type": "annotate_expression",
+          "named": true
+        },
+        {
+          "type": "apply_type",
+          "named": true
+        },
+        {
+          "type": "assign_expression",
+          "named": true
+        },
+        {
+          "type": "binary_expression",
+          "named": true
+        },
+        {
+          "type": "block",
+          "named": true
+        },
+        {
+          "type": "bool_literal",
+          "named": true
+        },
+        {
+          "type": "borrow_expression",
+          "named": true
+        },
+        {
+          "type": "break_expression",
+          "named": true
+        },
+        {
+          "type": "byte_string_literal",
+          "named": true
+        },
+        {
+          "type": "call_expression",
+          "named": true
+        },
+        {
+          "type": "cast_expression",
+          "named": true
+        },
+        {
+          "type": "continue_expression",
+          "named": true
+        },
+        {
+          "type": "dereference_expression",
+          "named": true
+        },
+        {
+          "type": "dot_expression",
+          "named": true
+        },
+        {
+          "type": "expression_list",
+          "named": true
+        },
+        {
+          "type": "function_type",
+          "named": true
+        },
+        {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "if_expression",
+          "named": true
+        },
+        {
+          "type": "index_expression",
+          "named": true
+        },
+        {
+          "type": "lambda_expression",
+          "named": true
+        },
+        {
+          "type": "loop_expression",
+          "named": true
+        },
+        {
+          "type": "move_or_copy_expression",
+          "named": true
+        },
+        {
+          "type": "name_expression",
+          "named": true
+        },
+        {
+          "type": "num_literal",
+          "named": true
+        },
+        {
+          "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
+          "named": true
+        },
+        {
+          "type": "ref_type",
+          "named": true
+        },
+        {
+          "type": "return_expression",
+          "named": true
+        },
+        {
+          "type": "spec_block",
+          "named": true
+        },
+        {
+          "type": "tuple_type",
+          "named": true
+        },
+        {
+          "type": "unary_expression",
+          "named": true
+        },
+        {
+          "type": "unit_expression",
+          "named": true
+        },
+        {
+          "type": "while_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "quantifier_bindings",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "quantifier_binding",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "quantifier_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "abort_expression",
+          "named": true
+        },
+        {
+          "type": "address_literal",
+          "named": true
+        },
+        {
+          "type": "annotate_expression",
+          "named": true
+        },
+        {
+          "type": "assign_expression",
+          "named": true
+        },
+        {
+          "type": "binary_expression",
+          "named": true
+        },
+        {
+          "type": "block",
+          "named": true
+        },
+        {
+          "type": "bool_literal",
+          "named": true
+        },
+        {
+          "type": "borrow_expression",
+          "named": true
+        },
+        {
+          "type": "break_expression",
+          "named": true
+        },
+        {
+          "type": "byte_string_literal",
+          "named": true
+        },
+        {
+          "type": "call_expression",
+          "named": true
+        },
+        {
+          "type": "cast_expression",
+          "named": true
+        },
+        {
+          "type": "continue_expression",
+          "named": true
+        },
+        {
+          "type": "dereference_expression",
+          "named": true
+        },
+        {
+          "type": "dot_expression",
+          "named": true
+        },
+        {
+          "type": "expression_list",
+          "named": true
+        },
+        {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
+          "type": "if_expression",
+          "named": true
+        },
+        {
+          "type": "index_expression",
+          "named": true
+        },
+        {
+          "type": "lambda_expression",
+          "named": true
+        },
+        {
+          "type": "loop_expression",
+          "named": true
+        },
+        {
+          "type": "move_or_copy_expression",
+          "named": true
+        },
+        {
+          "type": "name_expression",
+          "named": true
+        },
+        {
+          "type": "num_literal",
+          "named": true
+        },
+        {
+          "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_bindings",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
+          "named": true
+        },
+        {
+          "type": "return_expression",
+          "named": true
+        },
+        {
+          "type": "spec_block",
+          "named": true
+        },
+        {
+          "type": "unary_expression",
+          "named": true
+        },
+        {
+          "type": "unit_expression",
+          "named": true
+        },
+        {
+          "type": "while_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "ref_type",
     "named": true,
     "fields": {},
@@ -3484,6 +4117,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -3513,6 +4150,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -3547,6 +4188,10 @@
       "multiple": true,
       "required": true,
       "types": [
+        {
+          "type": "constant",
+          "named": true
+        },
         {
           "type": "spec_block",
           "named": true
@@ -3639,6 +4284,10 @@
           "named": true
         },
         {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
           "type": "if_expression",
           "named": true
         },
@@ -3684,6 +4333,10 @@
         },
         {
           "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
           "named": true
         },
         {
@@ -3798,6 +4451,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -3827,6 +4484,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -3966,6 +4627,10 @@
           "named": true
         },
         {
+          "type": "uninterpreted_spec_function",
+          "named": true
+        },
+        {
           "type": "use_decl",
           "named": true
         },
@@ -4049,6 +4714,10 @@
           "named": true
         },
         {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
           "type": "if_expression",
           "named": true
         },
@@ -4078,6 +4747,10 @@
         },
         {
           "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
           "named": true
         },
         {
@@ -4176,6 +4849,10 @@
           "named": true
         },
         {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
           "type": "if_expression",
           "named": true
         },
@@ -4205,6 +4882,10 @@
         },
         {
           "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
           "named": true
         },
         {
@@ -4303,6 +4984,10 @@
           "named": true
         },
         {
+          "type": "hex_string_literal",
+          "named": true
+        },
+        {
           "type": "if_expression",
           "named": true
         },
@@ -4332,6 +5017,10 @@
         },
         {
           "type": "pack_expression",
+          "named": true
+        },
+        {
+          "type": "quantifier_expression",
           "named": true
         },
         {
@@ -4390,6 +5079,10 @@
         },
         {
           "type": "byte_string_literal",
+          "named": true
+        },
+        {
+          "type": "hex_string_literal",
           "named": true
         },
         {
@@ -4647,6 +5340,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "index_expression",
             "named": true
           },
@@ -4696,6 +5393,64 @@
     "type": "unary_op",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "uninterpreted_spec_function",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "function_identifier",
+            "named": true
+          }
+        ]
+      },
+      "params": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "func_params",
+            "named": true
+          }
+        ]
+      },
+      "return_type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply_type",
+            "named": true
+          },
+          {
+            "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "ref_type",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          }
+        ]
+      },
+      "type_parameters": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_parameters",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "unit_expression",
@@ -4993,6 +5748,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -5022,6 +5781,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -5115,6 +5878,10 @@
             "named": true
           },
           {
+            "type": "hex_string_literal",
+            "named": true
+          },
+          {
             "type": "if_expression",
             "named": true
           },
@@ -5144,6 +5911,10 @@
           },
           {
             "type": "pack_expression",
+            "named": true
+          },
+          {
+            "type": "quantifier_expression",
             "named": true
           },
           {
@@ -5291,6 +6062,14 @@
     "named": false
   },
   {
+    "type": "const",
+    "named": false
+  },
+  {
+    "type": "constant_identifier",
+    "named": true
+  },
+  {
     "type": "continue",
     "named": false
   },
@@ -5343,11 +6122,19 @@
     "named": false
   },
   {
+    "type": "hex_string_literal",
+    "named": true
+  },
+  {
     "type": "identifier",
     "named": true
   },
   {
     "type": "if",
+    "named": false
+  },
+  {
+    "type": "in",
     "named": false
   },
   {
@@ -5447,6 +6234,10 @@
     "named": true
   },
   {
+    "type": "succeeds_if",
+    "named": false
+  },
+  {
     "type": "to",
     "named": false
   },
@@ -5485,6 +6276,10 @@
   {
     "type": "variable_identifier",
     "named": true
+  },
+  {
+    "type": "where",
+    "named": false
   },
   {
     "type": "while",
