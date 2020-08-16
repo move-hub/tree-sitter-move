@@ -53,9 +53,8 @@ spec {
             member: (identifier)))
         (spec_apply_pattern
           name_pattern: (spec_apply_name_pattern)
-          type_parameters: (type_parameters
-            (type_parameter
-              (type_parameter_identifier)))))
+          type_parameter: (type_parameter
+            name: (type_parameter_identifier))))
       (spec_apply
         exp: (name_expression
           access: (module_access
@@ -80,9 +79,8 @@ spec {
             member: (identifier))))
       (usual_spec_function
         name: (function_identifier)
-        type_parameters: (type_parameters
-          (type_parameter
-            (type_parameter_identifier)))
+        type_parameter: (type_parameter
+          name: (type_parameter_identifier))
         params: (func_params
           (function_parameter
             name: (variable_identifier)

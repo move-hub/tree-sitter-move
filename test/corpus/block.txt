@@ -17,12 +17,12 @@ block
 ----
 (source_file
   (block
-    (let_statement
+    item: (let_statement
       binds: (bind_list
         (bind_var
           (variable_identifier)))
       exp: (num_literal))
-    (assign_expression
+    item: (assign_expression
       lhs: (name_expression
         access: (module_access
           member: (identifier)))
@@ -32,16 +32,16 @@ block
             member: (identifier)))
         operator: (binary_operator)
         rhs: (num_literal)))
-    (name_expression
+    item: (name_expression
       access: (module_access
         member: (identifier))))
   (block
-    (let_statement
+    item: (let_statement
       binds: (bind_list
         (bind_var
           (variable_identifier)))
       exp: (num_literal))
-    (let_statement
+    item: (let_statement
       binds: (bind_list
         (bind_var
           (variable_identifier))
@@ -50,6 +50,6 @@ block
       exp: (expression_list
         (num_literal)
         (num_literal)))
-    (name_expression
+    item: (name_expression
       access: (module_access
         member: (identifier)))))

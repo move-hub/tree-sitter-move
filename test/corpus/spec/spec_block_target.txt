@@ -25,11 +25,10 @@ spec {};
   (spec_block
     target: (spec_block_target_schema
       name: (struct_identifier)
-      type_parameters: (type_parameters
-        (type_parameter
-          (type_parameter_identifier))
-        (type_parameter
-          (type_parameter_identifier))))
+      type_parameter: (type_parameter
+        name: (type_parameter_identifier))
+      type_parameter: (type_parameter
+        name: (type_parameter_identifier)))
     body: (spec_body))
   (spec_block
     body: (spec_body)))

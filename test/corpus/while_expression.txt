@@ -39,7 +39,7 @@ while (i < len)
           access: (module_access
             member: (identifier)))
         (block
-          (assign_expression
+          item: (assign_expression
             lhs: (name_expression
               access: (module_access
                 member: (identifier)))
@@ -49,7 +49,7 @@ while (i < len)
                   member: (identifier)))
               operator: (binary_operator)
               rhs: (num_literal)))
-          (name_expression
+          item: (name_expression
             access: (module_access
               member: (identifier)))))))
   (while_expression
@@ -62,7 +62,7 @@ while (i < len)
         access: (module_access
           member: (identifier))))
     body: (block
-      (call_expression
+      item: (call_expression
         access: (module_access
           member: (identifier))
         args: (arg_list
@@ -119,7 +119,7 @@ while (i < len)
           access: (module_access
             member: (identifier))))
       body: (block
-        (call_expression
+        item: (call_expression
           access: (module_access
             member: (identifier))
           args: (arg_list

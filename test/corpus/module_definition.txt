@@ -14,19 +14,17 @@ module LBR {
 (source_file
   (module_definition
     name: (module_identifier)
-    body: (module_body
-      (use_decl
-        (use_module
-          address: (address_literal)
-          module: (module_identifier)))
-      (struct_definition
-        name: (struct_identifier)
-        fields: (struct_def_fields))
-      (use_decl
-        (use_module
-          address: (address_literal)
-          module: (module_identifier)))
-      (usual_function_definition
-        name: (function_identifier)
-        params: (func_params)
-        body: (block)))))
+    module_member: (use_decl
+      (use_module
+        address: (address_literal)
+        module: (module_identifier)))
+    module_member: (struct_definition
+      name: (struct_identifier))
+    module_member: (use_decl
+      (use_module
+        address: (address_literal)
+        module: (module_identifier)))
+    module_member: (usual_function_definition
+      name: (function_identifier)
+      params: (func_params)
+      body: (block))))

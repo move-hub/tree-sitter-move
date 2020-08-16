@@ -41,7 +41,17 @@ module.exports = grammar({
   name: 'move',
   extras: $ => [/\s/, $.line_comment, $.block_comment],
   word: $ => $.identifier,
-  supertypes: $ => [$._spec_block_target],
+  supertypes: $ => [
+
+    $._expression,
+    $._module_member,
+    $._expression_term,
+    $._unary_expression,
+    $._literal_value,
+    $._type,
+    $._spec_block_memeber,
+    $._spec_block_target
+  ],
   conflicts: $ => [
     [$._struct_identifier, $._variable_identifier, $._function_identifier],
     [$._struct_identifier, $._function_identifier],
@@ -58,7 +68,7 @@ module.exports = grammar({
       $.module_definition,
 
       // the following is additional to make move code pieces highlighting work.
-      $._block_item,
+      seq($._block_item, ';'),
       $.use_decl,
       $._function_definition,
       $._struct_definition,
@@ -81,14 +91,19 @@ module.exports = grammar({
       "}"
     ),
     // parse use declaration
-    use_decl: $ => seq('use', choice($.use_module, $.use_module_member, $.use_module_members), ';'),
+    use_decl: $ => seq('use', choice($.use_module, $.use_module_members), ';'),
 
     // use 0x1::A (as AA);
     use_module: $ => seq($._module_identity, optional(seq('as', field('alias', $._module_identifier)))),
     // use 0x1::A::T as TT;
-    // use 0x1::A::f as ff;
-    use_module_member: $ => seq($._module_identity, '::', field('use_member', $.use_member)),
-    use_module_members: $ => seq($._module_identity, '::', '{', sepBy1(',', field('use_member', $.use_member)), '}'),
+    // use 0x1::A::{B, C as CC};
+    use_module_members: $ => seq(
+      $._module_identity, '::',
+      choice(
+        field('use_member', $.use_member),
+        seq('{', sepBy1(',', field('use_member', $.use_member)), '}')
+      )
+    ),
     use_member: $ => seq(
       field('member', $.identifier),
       optional(seq('as', field('alias', $.identifier)))
@@ -100,22 +115,18 @@ module.exports = grammar({
       return seq(
         'module',
         field('name', $._module_identifier),
-        field('body', $.module_body),
-      );
-    },
-    module_body: $ => {
-      return seq(
         '{',
-        repeat(choice(
-          $.use_decl,
-          $.constant,
-          $._function_definition,
-          $._struct_definition,
-          $.spec_block,
-        )),
+        repeat(field('module_member', $._module_member)),
         '}'
       );
     },
+    _module_member: $ => choice(
+      $.use_decl,
+      $.constant,
+      $._function_definition,
+      $._struct_definition,
+      $.spec_block,
+    ),
 
     constant: $ => seq('const', field('name', alias($.identifier, $.constant_identifier)), ':', field('type', $._type), '=', field('exp', $._expression), ";"),
 
@@ -130,24 +141,21 @@ module.exports = grammar({
     ),
     struct_definition: $ => seq(
       $._struct_signature,
-      field('fields', $.struct_def_fields),
-    ),
-    struct_def_fields: $ => seq(
       '{',
-      sepBy(',', $.field_annotation),
+      sepBy(',', field('field', $.field_annotation)),
       '}'
     ),
     field_annotation: $ => seq(
-      field('field', $._field_identifier),
+      field('name', $._field_identifier),
       ':',
       field('type', $._type),
     ),
 
     _struct_signature: $ => seq(
-      optional('resource'),
+      optional(field('resource_modifier', token('resource'))),
       'struct',
       field('name', $._struct_identifier),
-      optional(field('type_parameters', $.type_parameters)),
+      optional($._type_parameters),
     ),
 
     _function_definition: $ => choice(
@@ -167,7 +175,7 @@ module.exports = grammar({
       optional('public'),
       'fun',
       field('name', $._function_identifier),
-      optional(field('type_parameters', $.type_parameters)),
+      optional($._type_parameters),
       field('params', $.func_params),
       optional(seq(':', field('return_type', $._type))),
       optional(field('acquires', $.resource_accquires)),
@@ -200,7 +208,7 @@ module.exports = grammar({
     spec_block_target_schema: $ => seq(
       'schema',
       field('name', $._struct_identifier),
-      optional(field('type_parameters', $.type_parameters)),
+      optional($._type_parameters),
     ),
     spec_body: $ => seq(
       '{',
@@ -287,7 +295,7 @@ module.exports = grammar({
     spec_apply_pattern: $ => seq(
       optional(choice('public', 'internal')),
       field('name_pattern', $.spec_apply_name_pattern),
-      optional(field('type_parameters', $.type_parameters)),
+      optional($._type_parameters),
     ),
     spec_apply_name_pattern: $ => /[0-9a-zA-Z_*]+/,
 
@@ -301,7 +309,7 @@ module.exports = grammar({
     spec_variable: $ => seq(
       optional(choice('global', 'local')),
       field('name', $.identifier),
-      optional(field('type_parameters', $.type_parameters)),
+      optional($._type_parameters),
       ':',
       field('type', $._type),
       ';'
@@ -322,7 +330,7 @@ module.exports = grammar({
     ),
     _spec_function_signature: $ => seq(
       field('name', $._function_identifier),
-      optional(field('type_parameters', $.type_parameters)),
+      optional($._type_parameters),
       field('params', $.func_params),
       seq(':', field('return_type', $._type)),
     ),
@@ -401,10 +409,10 @@ module.exports = grammar({
     ),
 
     // type parameter grammar
-    type_parameters: $ => seq('<', sepBy1(',', $.type_parameter), '>'),
+    _type_parameters: $ => seq('<', sepBy1(',', field('type_parameter', $.type_parameter)), '>'),
     type_parameter: $ => seq(
-      $._type_parameter_identifier,
-      optional(seq(':', choice('copyable', 'resource')))
+      field('name', $._type_parameter_identifier),
+      optional(seq(':', field('kind', choice('copyable', 'resource'))))
     ),
 
 
@@ -412,18 +420,14 @@ module.exports = grammar({
 
     block: $ => seq(
       '{',
-      repeat($.use_decl),
-      repeat($._block_item),
-      optional(choice($._expression, $.let_statement)),
+      repeat(field('use', $.use_decl)),
+      sepBy(';', field('item', $._block_item)),
       '}'
     ),
-    _block_item: $ => seq(
-      choice(
-        $._expression,
-        $.let_statement,
-      ),
-      ';'
-    ),
+
+    // block_item: $ => seq($._block_item, ';'),
+    _block_item: $ => choice($._expression, $.let_statement),
+
     let_statement: $ => seq(
       'let',
       field('binds', $.bind_list),

@@ -32,7 +32,7 @@
     "nan": "^2.14.0"
   },
   "devDependencies": {
-    "standard-version": "^8.0.0",
+    "standard-version": "^9.0.0",
     "tree-sitter-cli": "^0.16.5"
   },
   "tree-sitter": [

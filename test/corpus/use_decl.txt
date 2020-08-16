@@ -20,13 +20,13 @@ use 0x0::A::{member1 as m1, member2 as m2, member3};
       module: (module_identifier)
       alias: (module_identifier)))
   (use_decl
-    (use_module_member
+    (use_module_members
       address: (address_literal)
       module: (module_identifier)
       use_member: (use_member
         member: (identifier))))
   (use_decl
-    (use_module_member
+    (use_module_members
       address: (address_literal)
       module: (module_identifier)
       use_member: (use_member

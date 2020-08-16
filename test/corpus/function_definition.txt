@@ -13,18 +13,16 @@ public fun deposit<Token>(payee: address, to_deposit: Libra::T<Token>) acquires 
 (source_file
   (native_function_definition
     name: (function_identifier)
-    type_parameters: (type_parameters
-      (type_parameter
-        (type_parameter_identifier)))
+    type_parameter: (type_parameter
+      name: (type_parameter_identifier))
     params: (func_params)
     acquires: (resource_accquires
       (module_access
         member: (identifier))))
   (usual_function_definition
     name: (function_identifier)
-    type_parameters: (type_parameters
-      (type_parameter
-        (type_parameter_identifier)))
+    type_parameter: (type_parameter
+      name: (type_parameter_identifier))
     params: (func_params
       (function_parameter
         name: (variable_identifier)

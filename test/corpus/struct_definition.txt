@@ -12,24 +12,22 @@ resource struct EventHandle<T: copyable> {
 (source_file
   (struct_definition
     name: (struct_identifier)
-    type_parameters: (type_parameters
-      (type_parameter
-        (type_parameter_identifier)))
-    fields: (struct_def_fields
-      (field_annotation
-        field: (field_identifier)
-        type: (apply_type
-          (module_access
-            member: (identifier))))
-      (field_annotation
-        field: (field_identifier)
-        type: (apply_type
-          (module_access
-            member: (identifier))
-          type_arguments: (type_arguments
-            (apply_type
-              (module_access
-                member: (identifier)))))))))
+    type_parameter: (type_parameter
+      name: (type_parameter_identifier))
+    field: (field_annotation
+      name: (field_identifier)
+      type: (apply_type
+        (module_access
+          member: (identifier))))
+    field: (field_annotation
+      name: (field_identifier)
+      type: (apply_type
+        (module_access
+          member: (identifier))
+        type_arguments: (type_arguments
+          (apply_type
+            (module_access
+              member: (identifier))))))))
 
 
 ====
@@ -42,6 +40,5 @@ native struct Event<T>;
 (source_file
   (native_struct_definition
     name: (struct_identifier)
-    type_parameters: (type_parameters
-      (type_parameter
-        (type_parameter_identifier)))))
+    type_parameter: (type_parameter
+      name: (type_parameter_identifier))))
