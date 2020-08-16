@@ -1,0 +1,35 @@
+====
+spec_block_target
+====
+spec module {
+};
+spec fun abc {};
+spec struct T {};
+spec schema T<A, B> {};
+spec {};
+
+----
+
+(source_file
+  (spec_block
+    target: (spec_block_target_module)
+    body: (spec_body))
+  (spec_block
+    target: (spec_block_target_fun
+      (function_identifier))
+    body: (spec_body))
+  (spec_block
+    target: (spec_block_target_struct
+      (struct_identifier))
+    body: (spec_body))
+  (spec_block
+    target: (spec_block_target_schema
+      name: (struct_identifier)
+      type_parameters: (type_parameters
+        (type_parameter
+          (type_parameter_identifier))
+        (type_parameter
+          (type_parameter_identifier))))
+    body: (spec_body))
+  (spec_block
+    body: (spec_body)))

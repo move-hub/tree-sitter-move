@@ -13,49 +13,45 @@ S<A,B> {
 ----
 (source_file
   (pack_expression
-    (name_expression
-      (module_access
-        (identifier)))
+    access: (module_access
+      member: (identifier))
     body: (field_initialize_list))
   (pack_expression
-    (name_expression
-      (module_access
-        module: (module_identifier)
-        (identifier)))
+    access: (module_access
+      module: (module_identifier)
+      member: (identifier))
     body: (field_initialize_list
       (exp_field
         field: (field_identifier))))
   (pack_expression
-    (name_expression
-      (module_access
-        address: (address_literal)
-        module: (module_identifier)
-        (identifier)))
+    access: (module_access
+      address: (address_literal)
+      module: (module_identifier)
+      member: (identifier))
     body: (field_initialize_list
       (exp_field
         field: (field_identifier)
         exp: (name_expression
-          (module_access
-            (identifier))))))
+          access: (module_access
+            member: (identifier))))))
   (pack_expression
-    (name_expression
-      (module_access
-        (identifier))
-      type_arguments: (type_arguments
-        (apply_type
-          (module_access
-            (identifier)))
-        (apply_type
-          (module_access
-            (identifier)))))
+    access: (module_access
+      member: (identifier))
+    type_arguments: (type_arguments
+      (apply_type
+        (module_access
+          member: (identifier)))
+      (apply_type
+        (module_access
+          member: (identifier))))
     body: (field_initialize_list
       (exp_field
         field: (field_identifier)
         exp: (name_expression
-          (module_access
-            (identifier))))
+          access: (module_access
+            member: (identifier))))
       (exp_field
         field: (field_identifier)
         exp: (name_expression
-          (module_access
-            (identifier)))))))
+          access: (module_access
+            member: (identifier)))))))

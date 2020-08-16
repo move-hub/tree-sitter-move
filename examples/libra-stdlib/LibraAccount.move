@@ -2,30 +2,32 @@ address 0x1 {
 
 // The module for the account resource that governs every Libra account
 module LibraAccount {
+    use 0x1::AccountFreezing;
     use 0x1::CoreAddresses;
-    use 0x1::AccountLimits;
+    use 0x1::ChainId;
+    use 0x1::AccountLimits::{Self, AccountLimitMutationCapability};
     use 0x1::Coin1::Coin1;
     use 0x1::Coin2::Coin2;
+    use 0x1::DualAttestation;
+    use 0x1::Errors;
     use 0x1::Event::{Self, EventHandle};
     use 0x1::Hash;
     use 0x1::LBR::{Self, LBR};
     use 0x1::LCS;
     use 0x1::LibraTimestamp;
+    use 0x1::LibraTransactionPublishingOption;
     use 0x1::LibraTransactionTimeout;
-    use 0x1::Signature;
     use 0x1::Signer;
     use 0x1::SlidingNonce;
     use 0x1::TransactionFee;
     use 0x1::ValidatorConfig;
+    use 0x1::ValidatorOperatorConfig;
     use 0x1::VASP;
     use 0x1::Vector;
     use 0x1::DesignatedDealer;
     use 0x1::Libra::{Self, Libra};
     use 0x1::Option::{Self, Option};
-    use 0x1::DualAttestationLimit;
     use 0x1::Roles;
-
-    resource struct PublishModule {}
 
     /// Every Libra account has a LibraAccount resource
     resource struct LibraAccount {
@@ -51,8 +53,6 @@ module LibraAccount {
         /// The current sequence number.
         /// Incremented by one each time a transaction is submitted
         sequence_number: u64,
-        /// If true, the account cannot be used to send transactions or receive funds
-        is_frozen: bool,
     }
 
     /// A resource that holds the coins stored in this account
@@ -74,12 +74,16 @@ module LibraAccount {
         account_address: address,
     }
 
-    /// A wrapper around an `AccountLimits::CallingCapability` which is used to check for account limits
+    /// A wrapper around an `AccountLimitMutationCapability` which is used to check for account limits
     /// and to record freeze/unfreeze events.
     resource struct AccountOperationsCapability {
-        limits_cap: AccountLimits::CallingCapability,
-        freeze_event_handle: EventHandle<FreezeAccountEvent>,
-        unfreeze_event_handle: EventHandle<UnfreezeAccountEvent>,
+        limits_cap: AccountLimitMutationCapability,
+    }
+
+    spec module {
+        /// After genesis, the `AccountOperationsCapability` exists.
+        invariant [global]
+            LibraTimestamp::is_operating() ==> exists<AccountOperationsCapability>(CoreAddresses::LIBRA_ROOT_ADDRESS());
     }
 
     /// Message for sent events
@@ -106,48 +110,34 @@ module LibraAccount {
         metadata: vector<u8>,
     }
 
-    /// A privilege to allow the freezing of accounts.
-    struct FreezingPrivilege { }
+    const MAX_U64: u128 = 18446744073709551615;
 
-    /// Message for freeze account events
-    struct FreezeAccountEvent {
-        /// The address that initiated freeze txn
-        initiator_address: address,
-        /// The address that was frozen
-        frozen_address: address,
-    }
-
-    /// Message for unfreeze account events
-    struct UnfreezeAccountEvent {
-        /// The address that initiated unfreeze txn
-        initiator_address: address,
-        /// The address that was unfrozen
-        unfrozen_address: address,
-    }
-
-
-    const ENOT_GENESIS: u64 = 0;
-    const EINVALID_SINGLETON_ADDRESS: u64 = 1;
+    const EACCOUNT: u64 = 0;
+    const ESEQUENCE_NUMBER: u64 = 1;
     const ECOIN_DEPOSIT_IS_ZERO: u64 = 2;
     const EDEPOSIT_EXCEEDS_LIMITS: u64 = 3;
-    const EMALFORMED_METADATA_SIGNATURE: u64 = 4;
-    const EINVALID_METADATA_SIGNATURE: u64 = 5;
+    const EROLE_CANT_STORE_BALANCE: u64 = 4;
+    const EINSUFFICIENT_BALANCE: u64 = 5;
     const EWITHDRAWAL_EXCEEDS_LIMITS: u64 = 6;
     const EWITHDRAWAL_CAPABILITY_ALREADY_EXTRACTED: u64 = 7;
     const EMALFORMED_AUTHENTICATION_KEY: u64 = 8;
     const EKEY_ROTATION_CAPABILITY_ALREADY_EXTRACTED: u64 = 9;
     const ECANNOT_CREATE_AT_VM_RESERVED: u64 = 10;
-    const ENOT_LIBRA_ROOT: u64 = 11;
-    const EACCOUNT_ALREADY_EXISTS: u64 = 12;
-    const EPARENT_VASP_CURRENCY_LIMITS_DNE: u64 = 13;
-    const ENOT_TREASURY_COMPLIANCE: u64 = 14;
-    const EACCOUNT_CANNOT_BE_FROZEN: u64 = 15;
-    const ENOT_A_CURRENCY: u64 = 16;
-    const EADD_EXISTING_CURRENCY: u64 = 17;
+    const EADD_EXISTING_CURRENCY: u64 = 15;
+    /// Attempting to send funds to an account that does not exist
+    const EPAYEE_DOES_NOT_EXIST: u64 = 17;
+    /// Attempting to send funds in (e.g.) LBR to an account that exists, but does not have a
+    /// Balance<LBR> resource
+    const EPAYEE_CANT_ACCEPT_CURRENCY_TYPE: u64 = 18;
+    const EPAYER_DOESNT_HOLD_CURRENCY: u64 = 19;
+    const EGAS: u64 = 20;
+    const EACCOUNT_OPERATIONS_CAPABILITY: u64 = 22;
 
     /// Prologue errors. These are separated out from the other errors in this
     /// module since they are mapped separately to major VM statuses, and are
-    /// important to the semantics of the system.
+    /// important to the semantics of the system. Those codes also need to be
+    /// directly used in aborts instead of augmenting them with a category
+    /// via the `Errors` module.
     const EPROLOGUE_ACCOUNT_FROZEN: u64 = 0;
     const EPROLOGUE_INVALID_ACCOUNT_AUTH_KEY: u64 = 1;
     const EPROLOGUE_SEQUENCE_NUMBER_TOO_OLD: u64 = 2;
@@ -155,59 +145,81 @@ module LibraAccount {
     const EPROLOGUE_ACCOUNT_DNE: u64 = 4;
     const EPROLOGUE_CANT_PAY_GAS_DEPOSIT: u64 = 5;
     const EPROLOGUE_TRANSACTION_EXPIRED: u64 = 6;
+    const EPROLOGUE_BAD_CHAIN_ID: u64 = 7;
+    const EPROLOGUE_SCRIPT_NOT_ALLOWED: u64 = 8;
+    const EPROLOGUE_MODULE_NOT_ALLOWED: u64 = 9;
 
-    /// Grants the ability to publish modules to the libra root account. The VM
-    /// will look for this resource to determine whether the sending account can publish modules.
-    /// Aborts if the `account` does not have the correct role (libra root).
-    public fun grant_module_publishing_privilege(account: &signer) {
-        // This is also an operational constraint since the VM will look for
-        // this specific address and publish these modules under the core code
-        // address.
-        assert(Roles::has_libra_root_role(account), ENOT_LIBRA_ROOT);
-        assert(Signer::address_of(account) == CoreAddresses::LIBRA_ROOT_ADDRESS(), EINVALID_SINGLETON_ADDRESS);
-        move_to(account, PublishModule{});
-    }
+    /// This error will not be translated it should be an invariant violation.
+    const EPROLOGUE_UNEXPECTED_WRITESET: u64 = 10;
+
+    const WRITESET_TRANSACTION_TAG: u8 = 0;
+    const SCRIPT_TRANSACTION_TAG: u8 = 1;
+    const MODULE_TRANSACTION_TAG: u8 = 2;
+
 
     /// Initialize this module. This is only callable from genesis.
     public fun initialize(
         lr_account: &signer,
     ) {
-        assert(LibraTimestamp::is_genesis(), ENOT_GENESIS);
+        LibraTimestamp::assert_genesis();
         // Operational constraint, not a privilege constraint.
-        assert(Signer::address_of(lr_account) == CoreAddresses::LIBRA_ROOT_ADDRESS(), EINVALID_SINGLETON_ADDRESS);
-        let limits_cap = AccountLimits::grant_calling_capability(lr_account);
-        AccountLimits::initialize(lr_account, &limits_cap);
+        CoreAddresses::assert_libra_root(lr_account);
+        assert(
+            !exists<AccountOperationsCapability>(CoreAddresses::LIBRA_ROOT_ADDRESS()),
+            Errors::already_published(EACCOUNT_OPERATIONS_CAPABILITY)
+        );
         move_to(
             lr_account,
             AccountOperationsCapability {
-                limits_cap,
-                freeze_event_handle: Event::new_event_handle(lr_account),
-                unfreeze_event_handle: Event::new_event_handle(lr_account),
+                limits_cap: AccountLimits::grant_mutation_capability(lr_account),
             }
         );
+    }
+
+    /// Return `true` if `addr` has already published account limits for `Token`
+    fun has_published_account_limits<Token>(addr: address): bool {
+        if (VASP::is_vasp(addr)) VASP::has_account_limits<Token>(addr)
+        else AccountLimits::has_window_published<Token>(addr)
     }
 
     /// Returns whether we should track and record limits for the `payer` or `payee` account.
     /// Depending on the `is_withdrawal` flag passed in we determine whether the
     /// `payer` or `payee` account is being queried. `VASP->any` and
     /// `any->VASP` transfers are tracked in the VASP.
-    fun should_track_limits_for_account(payer: address, payee: address, is_withdrawal: bool): bool {
+    fun should_track_limits_for_account<Token>(
+        payer: address, payee: address, is_withdrawal: bool
+    ): bool {
         if (is_withdrawal) {
-            VASP::is_vasp(payer) && (!VASP::is_vasp(payee) || !VASP::is_same_vasp(payer, payee))
+            has_published_account_limits<Token>(payer) &&
+            VASP::is_vasp(payer) &&
+            (!VASP::is_vasp(payee) || !VASP::is_same_vasp(payer, payee))
         } else {
-            VASP::is_vasp(payee) && (!VASP::is_vasp(payee) || !VASP::is_same_vasp(payer, payee))
+            has_published_account_limits<Token>(payee) &&
+            VASP::is_vasp(payee) &&
+            (!VASP::is_vasp(payer) || !VASP::is_same_vasp(payee, payer))
         }
     }
     spec fun should_track_limits_for_account {
-        pragma opaque = true, verify = true;
-        ensures result == spec_should_track_limits_for_account(payer, payee, is_withdrawal);
+        pragma opaque;
+        aborts_if false;
+        ensures result == spec_should_track_limits_for_account<Token>(payer, payee, is_withdrawal);
     }
     spec module {
-        define spec_should_track_limits_for_account(payer: address, payee: address, is_withdrawal: bool): bool {
+        define spec_has_published_account_limits<Token>(addr: address): bool {
+            if (VASP::is_vasp(addr)) VASP::spec_has_account_limits<Token>(addr)
+            else AccountLimits::has_window_published<Token>(addr)
+        }
+        define spec_should_track_limits_for_account<Token>(
+            payer: address, payee: address, is_withdrawal: bool
+        ): bool {
             if (is_withdrawal) {
-                VASP::spec_is_vasp(payer) && (!VASP::spec_is_vasp(payee) || !VASP::spec_is_same_vasp(payer, payee))
+                spec_has_published_account_limits<Token>(payer) &&
+                VASP::is_vasp(payer) &&
+                (!VASP::is_vasp(payee) || !VASP::spec_is_same_vasp(payer, payee))
             } else {
-                VASP::spec_is_vasp(payee) && (!VASP::spec_is_vasp(payee) || !VASP::spec_is_same_vasp(payer, payee))
+                spec_has_published_account_limits<Token>(payee) &&
+                VASP::is_vasp(payee) &&
+                (!VASP::is_vasp(payer) || !VASP::spec_is_same_vasp(payee, payer))
             }
         }
     }
@@ -220,26 +232,21 @@ module LibraAccount {
     /// credits the LBR reserve.
     public fun staple_lbr(cap: &WithdrawCapability, amount_lbr: u64)
     acquires LibraAccount, Balance, AccountOperationsCapability {
+        LibraTimestamp::assert_operating();
         let cap_address = cap.account_address;
-        // withdraw all Coin1 and Coin2
-        let coin1_balance = balance<Coin1>(cap_address);
-        let coin2_balance = balance<Coin2>(cap_address);
         // use the LBR reserve address as `payee_address`
         let payee_address = LBR::reserve_address();
-        let coin1 = withdraw_from<Coin1>(cap, payee_address, coin1_balance, x"");
-        let coin2 = withdraw_from<Coin2>(cap, payee_address, coin2_balance, x"");
+        let (amount_coin1, amount_coin2) = LBR::calculate_component_amounts_for_lbr(amount_lbr);
+        let coin1 = withdraw_from<Coin1>(cap, payee_address, amount_coin1, x"");
+        let coin2 = withdraw_from<Coin2>(cap, payee_address, amount_coin2, x"");
         // Create `amount_lbr` LBR
-        let (lbr, coin1, coin2) = LBR::create(amount_lbr, coin1, coin2);
+        let lbr = LBR::create(amount_lbr, coin1, coin2);
         // use the reserved address as the payer for the LBR payment because the funds did not come
         // from an existing balance
         deposit(CoreAddresses::VM_RESERVED_ADDRESS(), cap_address, lbr, x"", x"");
-        // TODO: eliminate these self-deposits by withdrawing appropriate amounts up-front
-        // Deposit the Coin1/Coin2 remainders
-        deposit(cap_address, cap_address, coin1, x"", x"");
-        deposit(cap_address, cap_address, coin2, x"", x"")
     }
     spec fun staple_lbr {
-        /// TODO(wrwg): function takes very long to verify; investigate why
+        /// > TODO: timeout
         pragma verify = false;
     }
 
@@ -250,6 +257,7 @@ module LibraAccount {
     /// `cap.address`'s balance and credits the LBR reserve.
     public fun unstaple_lbr(cap: &WithdrawCapability, amount_lbr: u64)
     acquires LibraAccount, Balance, AccountOperationsCapability {
+        LibraTimestamp::assert_operating();
         // use the reserved address as the payee because the funds will be burned
         let lbr = withdraw_from<LBR>(cap, CoreAddresses::VM_RESERVED_ADDRESS(), amount_lbr, x"");
         let (coin1, coin2) = LBR::unpack(lbr);
@@ -260,7 +268,7 @@ module LibraAccount {
         deposit(payer_address, payee_address, coin2, x"", x"")
     }
     spec fun unstaple_lbr {
-        /// TODO(wrwg): function takes very long to verify; investigate why
+        /// > TODO: timeout
         pragma verify = false;
     }
 
@@ -272,23 +280,31 @@ module LibraAccount {
         metadata: vector<u8>,
         metadata_signature: vector<u8>
     ) acquires LibraAccount, Balance, AccountOperationsCapability {
+        LibraTimestamp::assert_operating();
+        AccountFreezing::assert_not_frozen(payee);
+
         // Check that the `to_deposit` coin is non-zero
         let deposit_value = Libra::value(&to_deposit);
-        assert(deposit_value > 0, ECOIN_DEPOSIT_IS_ZERO);
-        if (dual_attestation_required<Token>(payer, payee, deposit_value)) {
-            assert_signature_is_valid(payer, payee, &metadata_signature, &metadata, deposit_value);
-        };
+        assert(deposit_value > 0, Errors::invalid_argument(ECOIN_DEPOSIT_IS_ZERO));
+        // Check that an account exists at `payee`
+        assert(exists_at(payee), Errors::not_published(EPAYEE_DOES_NOT_EXIST));
+        // Check that `payee` can accept payments in `Token`
+        assert(exists<Balance<Token>>(payee), Errors::invalid_argument(EPAYEE_CANT_ACCEPT_CURRENCY_TYPE));
 
+        // Check that the payment complies with dual attestation rules
+        DualAttestation::assert_payment_ok<Token>(
+            payer, payee, deposit_value, copy metadata, metadata_signature
+        );
         // Ensure that this deposit is compliant with the account limits on
         // this account.
-        if (should_track_limits_for_account(payer, payee, false)) {
+        if (should_track_limits_for_account<Token>(payer, payee, false)) {
             assert(
                 AccountLimits::update_deposit_limits<Token>(
                     deposit_value,
                     VASP::parent_address(payee),
                     &borrow_global<AccountOperationsCapability>(CoreAddresses::LIBRA_ROOT_ADDRESS()).limits_cap
                 ),
-                EDEPOSIT_EXCEEDS_LIMITS
+                Errors::limit_exceeded(EDEPOSIT_EXCEEDS_LIMITS)
             )
         };
 
@@ -302,139 +318,45 @@ module LibraAccount {
                 amount: deposit_value,
                 currency_code: Libra::currency_code<Token>(),
                 payer,
-                metadata: metadata
+                metadata
             }
         );
     }
     spec fun deposit {
-        pragma verify = true;
-        include DepositAbortsIf<Token>;
-        include DepositEnsures<Token>;
+        // TODO: reactivate after aborts_if soundness fix.
+        pragma verify = false;
+        include DepositAbortsIf<Token>{amount: to_deposit.value};
+        include DepositEnsures<Token>{amount: to_deposit.value};
     }
     spec schema DepositAbortsIf<Token> {
         payer: address;
         payee: address;
-        to_deposit: Libra<Token>;
+        amount: u64;
         metadata_signature: vector<u8>;
         metadata: vector<u8>;
-        aborts_if spec_should_track_limits_for_account(payer, payee, false)
-                    && (!spec_has_account_operations_cap()
-                       || !AccountLimits::spec_update_deposit_limits<Token>(
-                              to_deposit.value,
-                              VASP::spec_parent_address(payee)
-                           )
-                       );
-        aborts_if to_deposit.value == 0;
-        aborts_if !exists<LibraAccount>(payee);
-        aborts_if !exists<Balance<Token>>(payee);
-        aborts_if global<Balance<Token>>(payee).coin.value + to_deposit.value > max_u64();
-        include TravelRuleAppliesAbortsIf<Token>;
-        aborts_if spec_dual_attestation_required<Token>(payer, payee, to_deposit.value)
-                        && !signature_is_valid(payer, payee, metadata_signature, metadata, to_deposit.value);
+        include LibraTimestamp::AbortsIfNotOperating;
+        include AccountFreezing::AbortsIfFrozen{account: payee};
+        aborts_if amount == 0 with Errors::INVALID_ARGUMENT;
+        include DualAttestation::AssertPaymentOkAbortsIf<Token>{value: amount};
+        include
+            spec_should_track_limits_for_account<Token>(payer, payee, false) ==>
+            AccountLimits::UpdateDepositLimitsAbortsIf<Token> {
+                addr: VASP::spec_parent_address(payee),
+            };
+        aborts_if
+            spec_should_track_limits_for_account<Token>(payer, payee, false) &&
+                !AccountLimits::spec_update_deposit_limits<Token>(amount, VASP::spec_parent_address(payee))
+            with Errors::LIMIT_EXCEEDED;
+        aborts_if !exists<Balance<Token>>(payee) with Errors::INVALID_ARGUMENT;
+        aborts_if global<Balance<Token>>(payee).coin.value + amount > max_u64() with Errors::LIMIT_EXCEEDED;
+        aborts_if !exists_at(payee) with Errors::NOT_PUBLISHED;
+        include Libra::AbortsIfNoCurrency<Token>;
     }
     spec schema DepositEnsures<Token> {
         payer: address;
         payee: address;
-        to_deposit: Libra<Token>;
-        ensures global<Balance<Token>>(payee).coin.value
-            == old(global<Balance<Token>>(payee).coin.value) + to_deposit.value;
-    }
-
-    /// Helper function to check validity of a signature when dual attestion is required.
-    fun assert_signature_is_valid(
-        payer: address,
-        payee: address,
-        metadata_signature: &vector<u8>,
-        metadata: &vector<u8>,
-        deposit_value: u64
-    ) {
-        // sanity check of signature validity
-        assert(Vector::length(metadata_signature) == 64, EMALFORMED_METADATA_SIGNATURE);
-        // cryptographic check of signature validity
-        let message = dual_attestation_message(payer, metadata, deposit_value);
-        assert(
-            Signature::ed25519_verify(
-                *metadata_signature,
-                VASP::compliance_public_key(payee),
-                message
-            ),
-            EINVALID_METADATA_SIGNATURE
-        );
-    }
-    spec fun assert_signature_is_valid {
-        pragma verify = true, opaque = true;
-        aborts_if !signature_is_valid(payer, payee, metadata_signature, metadata, deposit_value);
-    }
-    spec module {
-        /// Returns true if signature is valid.
-        define signature_is_valid(
-            payer: address,
-            payee: address,
-            metadata_signature: vector<u8>,
-            metadata: vector<u8>,
-            deposit_value: u64
-        ): bool {
-            len(metadata_signature) == 64
-                && Signature::spec_ed25519_verify(
-                        metadata_signature,
-                        VASP::spec_compliance_public_key(payee),
-                        spec_dual_attestation_message(payer, metadata, deposit_value)
-                   )
-        }
-    }
-
-    /// Helper which returns true if dual attestion is required for a deposit.
-    fun dual_attestation_required<Token>(payer: address, payee: address, deposit_value: u64): bool {
-        // travel rule applies for payments over a threshold
-        let travel_rule_limit_microlibra = DualAttestationLimit::get_cur_microlibra_limit();
-        let approx_lbr_microlibra_value = Libra::approx_lbr_for_value<Token>(deposit_value);
-        let above_threshold = approx_lbr_microlibra_value >= travel_rule_limit_microlibra;
-        // travel rule applies if the payer and payee are both VASP, but not for
-        // intra-VASP transactions
-        above_threshold
-            && VASP::is_vasp(payer) && VASP::is_vasp(payee)
-            && VASP::parent_address(payer) != VASP::parent_address(payee)
-    }
-    spec fun dual_attestation_required {
-        pragma verify = true, opaque = true;
-        include TravelRuleAppliesAbortsIf<Token>;
-        ensures result == spec_dual_attestation_required<Token>(payer, payee, deposit_value);
-    }
-    spec schema TravelRuleAppliesAbortsIf<Token> {
-        aborts_if !Libra::spec_is_currency<Token>();
-        aborts_if !DualAttestationLimit::spec_is_published();
-    }
-    spec module {
-        /// Helper functions which simulates `Self::dual_attestation_required`.
-        define spec_dual_attestation_required<Token>(payer: address, payee: address, deposit_value: u64): bool {
-            Libra::spec_approx_lbr_for_value<Token>(deposit_value)
-                    >= DualAttestationLimit::spec_get_cur_microlibra_limit()
-            && VASP::spec_is_vasp(payer) && VASP::spec_is_vasp(payee)
-            && VASP::spec_parent_address(payer) != VASP::spec_parent_address(payee)
-        }
-    }
-
-    /// Helper to construct a message for dual attestation.
-    /// Message is `metadata | payer | amount | domain_separator`.
-    fun dual_attestation_message(payer: address, metadata: &vector<u8>, deposit_value: u64): vector<u8> {
-        let domain_separator = b"@@$$LIBRA_ATTEST$$@@";
-        let message = *metadata;
-        Vector::append(&mut message, LCS::to_bytes(&payer));
-        Vector::append(&mut message, LCS::to_bytes(&deposit_value));
-        Vector::append(&mut message, domain_separator);
-        message
-    }
-    spec fun dual_attestation_message {
-        /// Abstract from construction of message for the prover. Concatenation of results from `LCS::to_bytes`
-        /// are difficult to reason about, so we avoid doing it. This is possible because the actual value of this
-        /// message is not important for the verification problem, as long as the prover considers both
-        /// messages which fail verification and which do not.
-        pragma opaque = true, verify = false;
-        ensures result == spec_dual_attestation_message(payer, metadata, deposit_value);
-    }
-    spec module {
-        /// Uninterpreted function for `Self::dual_attestation_message`.
-        define spec_dual_attestation_message(payer: address, metadata: vector<u8>, deposit_value: u64): vector<u8>;
+        amount: u64;
+        ensures global<Balance<Token>>(payee).coin.value == old(global<Balance<Token>>(payee).coin.value) + amount;
     }
 
     /// Mint 'mint_amount' to 'designated_dealer_address' for 'tier_index' tier.
@@ -454,11 +376,11 @@ module LibraAccount {
         deposit(CoreAddresses::VM_RESERVED_ADDRESS(), designated_dealer_address, coin, x"", x"")
     }
     spec fun tiered_mint {
-        pragma verify = true;
+        pragma verify_duration_estimate = 100;
     }
 
-    /// Cancel the oldest burn request from `preburn_address` and return the funds.
-    /// Fails if the sender does not have a published MintCapability.
+    // Cancel the burn request from `preburn_address` and return the funds.
+    // Fails if the sender does not have a published MintCapability.
     public fun cancel_burn<Token>(
         account: &signer,
         preburn_address: address,
@@ -468,8 +390,9 @@ module LibraAccount {
         // `preburn_address`'s `Preburn` resource to its balance
         deposit(preburn_address, preburn_address, coin, x"", x"")
     }
-    spec fun tiered_mint {
-        pragma verify = true;
+    spec fun cancel_burn {
+        // TODO: reactivate after aborts_if soundness fix.
+        pragma verify = false;
     }
 
     /// Helper to withdraw `amount` from the given account balance and return the withdrawn Libra<Token>
@@ -479,20 +402,55 @@ module LibraAccount {
         balance: &mut Balance<Token>,
         amount: u64
     ): Libra<Token> acquires AccountOperationsCapability {
+        LibraTimestamp::assert_operating();
+        AccountFreezing::assert_not_frozen(payer);
         // Make sure that this withdrawal is compliant with the limits on
         // the account if it's a inter-VASP transfer,
-        if (should_track_limits_for_account(payer, payee, true)) {
+        if (should_track_limits_for_account<Token>(payer, payee, true)) {
             let can_withdraw = AccountLimits::update_withdrawal_limits<Token>(
                     amount,
                     VASP::parent_address(payer),
                     &borrow_global<AccountOperationsCapability>(CoreAddresses::LIBRA_ROOT_ADDRESS()).limits_cap
             );
-            assert(can_withdraw, EWITHDRAWAL_EXCEEDS_LIMITS);
+            assert(can_withdraw, Errors::limit_exceeded(EWITHDRAWAL_EXCEEDS_LIMITS));
         };
-        Libra::withdraw(&mut balance.coin, amount)
+        let coin = &mut balance.coin;
+        // Abort if this withdrawal would make the `payer`'s balance go negative
+        assert(Libra::value(coin) >= amount, Errors::limit_exceeded(EINSUFFICIENT_BALANCE));
+        Libra::withdraw(coin, amount)
     }
     spec fun withdraw_from_balance {
-        pragma verify = true;
+        // TODO: reactivate after aborts_if soundness fix.
+        pragma verify = false;
+        include WithdrawFromBalanceAbortsIf<Token>;
+        include WithdrawFromBalanceEnsures<Token>;
+    }
+    spec schema WithdrawFromBalanceAbortsIf<Token> {
+        payer: address;
+        payee: address;
+        balance: Balance<Token>;
+        amount: u64;
+        include LibraTimestamp::AbortsIfNotOperating;
+        include AccountFreezing::AbortsIfFrozen{account: payer};
+        include
+            spec_should_track_limits_for_account<Token>(payer, payee, true) ==>
+            AccountLimits::UpdateWithdrawalLimitsAbortsIf<Token> {
+                addr: VASP::spec_parent_address(payer),
+            };
+        aborts_if
+            spec_should_track_limits_for_account<Token>(payer, payee, true) &&
+            (   !spec_has_account_operations_cap() ||
+                !AccountLimits::spec_update_withdrawal_limits<Token>(amount, VASP::spec_parent_address(payer))
+            )
+            with Errors::LIMIT_EXCEEDED;
+        aborts_if balance.coin.value < amount with Errors::LIMIT_EXCEEDED;
+    }
+    spec schema WithdrawFromBalanceEnsures<Token> {
+        balance: Balance<Token>;
+        amount: u64;
+        result: Libra<Token>;
+        ensures balance.coin.value == old(balance.coin.value) - amount;
+        ensures result.value == amount;
     }
 
     /// Withdraw `amount` `Libra<Token>`'s from the account balance under
@@ -503,7 +461,10 @@ module LibraAccount {
         amount: u64,
         metadata: vector<u8>,
     ): Libra<Token> acquires Balance, AccountOperationsCapability, LibraAccount {
+        LibraTimestamp::assert_operating();
         let payer = cap.account_address;
+        assert(exists_at(payer), Errors::not_published(EACCOUNT));
+        assert(exists<Balance<Token>>(payer), Errors::not_published(EPAYER_DOESNT_HOLD_CURRENCY));
         let account_balance = borrow_global_mut<Balance<Token>>(payer);
         // Load the payer's account and emit an event to record the withdrawal
         Event::emit_event<SentPaymentEvent>(
@@ -517,16 +478,17 @@ module LibraAccount {
         );
         withdraw_from_balance<Token>(payer, payee, account_balance, amount)
     }
-    spec fun withdraw_from {
-        pragma verify = true;
-    }
 
     /// Withdraw `amount` `Libra<Token>`'s from `cap.address` and send them to the `Preburn`
     /// resource under `dd`.
     public fun preburn<Token>(
         dd: &signer, cap: &WithdrawCapability, amount: u64
     ) acquires Balance, AccountOperationsCapability, LibraAccount {
+        LibraTimestamp::assert_operating();
         Libra::preburn_to<Token>(dd, withdraw_from(cap, Signer::address_of(dd), amount, x""))
+    }
+    spec fun preburn {
+        pragma verify_duration_estimate = 100;
     }
 
     /// Return a unique capability granting permission to withdraw from the sender's account balance.
@@ -535,17 +497,19 @@ module LibraAccount {
     ): WithdrawCapability acquires LibraAccount {
         let sender_addr = Signer::address_of(sender);
         // Abort if we already extracted the unique withdraw capability for this account.
-        assert(!delegated_withdraw_capability(sender_addr), EWITHDRAWAL_CAPABILITY_ALREADY_EXTRACTED);
+        assert(
+            !delegated_withdraw_capability(sender_addr),
+            Errors::invalid_state(EWITHDRAWAL_CAPABILITY_ALREADY_EXTRACTED)
+        );
+        assert(exists_at(sender_addr), Errors::not_published(EACCOUNT));
         let account = borrow_global_mut<LibraAccount>(sender_addr);
         Option::extract(&mut account.withdrawal_capability)
-    }
-    spec fun extract_withdraw_capability {
-        pragma verify = true;
     }
 
     /// Return the withdraw capability to the account it originally came from
     public fun restore_withdraw_capability(cap: WithdrawCapability)
     acquires LibraAccount {
+        assert(exists_at(cap.account_address), Errors::not_published(EACCOUNT));
         let account = borrow_global_mut<LibraAccount>(cap.account_address);
         Option::fill(&mut account.withdrawal_capability, cap)
     }
@@ -570,45 +534,64 @@ module LibraAccount {
             metadata_signature
         );
     }
-    spec fun pay_from {
-        pragma verify = true;
-    }
 
     /// Rotate the authentication key for the account under cap.account_address
     public fun rotate_authentication_key(
         cap: &KeyRotationCapability,
         new_authentication_key: vector<u8>,
     ) acquires LibraAccount  {
+        assert(exists_at(cap.account_address), Errors::not_published(EACCOUNT));
         let sender_account_resource = borrow_global_mut<LibraAccount>(cap.account_address);
         // Don't allow rotating to clearly invalid key
-        assert(Vector::length(&new_authentication_key) == 32, EMALFORMED_AUTHENTICATION_KEY);
+        assert(Vector::length(&new_authentication_key) == 32, Errors::invalid_argument(EMALFORMED_AUTHENTICATION_KEY));
         sender_account_resource.authentication_key = new_authentication_key;
     }
     spec fun rotate_authentication_key {
-        pragma verify = true;
+        include RotateAuthenticationKeyAbortsIf;
+        ensures global<LibraAccount>(cap.account_address).authentication_key == new_authentication_key;
     }
+    spec schema RotateAuthenticationKeyAbortsIf {
+        cap: &KeyRotationCapability;
+        new_authentication_key: vector<u8>;
+        aborts_if !exists_at(cap.account_address) with Errors::NOT_PUBLISHED;
+        aborts_if len(new_authentication_key) != 32 with Errors::INVALID_ARGUMENT;
+    }
+    spec define spec_rotate_authentication_key(addr: address, new_authentication_key: vector<u8>): bool {
+        global<LibraAccount>(addr).authentication_key == new_authentication_key
+    }
+
 
     /// Return a unique capability granting permission to rotate the sender's authentication key
     public fun extract_key_rotation_capability(account: &signer): KeyRotationCapability
     acquires LibraAccount {
         let account_address = Signer::address_of(account);
         // Abort if we already extracted the unique key rotation capability for this account.
-        assert(!delegated_key_rotation_capability(account_address), EKEY_ROTATION_CAPABILITY_ALREADY_EXTRACTED);
+        assert(
+            !delegated_key_rotation_capability(account_address),
+             Errors::invalid_state(EKEY_ROTATION_CAPABILITY_ALREADY_EXTRACTED)
+        );
+        assert(exists_at(account_address), Errors::not_published(EACCOUNT));
         let account = borrow_global_mut<LibraAccount>(account_address);
         Option::extract(&mut account.key_rotation_capability)
     }
     spec fun extract_key_rotation_capability {
-        pragma verify = true;
+        let account_addr = Signer::spec_address_of(account);
+        aborts_if !exists_at(account_addr) with Errors::NOT_PUBLISHED;
+        aborts_if delegated_key_rotation_capability(account_addr) with Errors::INVALID_STATE;
+        ensures delegated_key_rotation_capability(account_addr);
     }
 
     /// Return the key rotation capability to the account it originally came from
     public fun restore_key_rotation_capability(cap: KeyRotationCapability)
     acquires LibraAccount {
+        assert(exists_at(cap.account_address), Errors::not_published(EACCOUNT));
         let account = borrow_global_mut<LibraAccount>(cap.account_address);
         Option::fill(&mut account.key_rotation_capability, cap)
     }
     spec fun restore_key_rotation_capability {
-        pragma verify = true;
+        aborts_if !exists_at(cap.account_address) with Errors::NOT_PUBLISHED;
+        aborts_if !delegated_key_rotation_capability(cap.account_address) with Errors::INVALID_ARGUMENT;
+        ensures spec_holds_own_key_rotation_cap(cap.account_address);
     }
 
     fun add_currencies_for_account<Token>(
@@ -629,10 +612,6 @@ module LibraAccount {
             };
         };
     }
-    spec fun add_currencies_for_account {
-        /// TODO(wrwg): function takes very long to verify; investigate why
-        pragma verify = false;
-    }
 
     /// Creates a new account with account at `new_account_address` with a balance of
     /// zero in `Token` and authentication key `auth_key_prefix` | `fresh_address`. If
@@ -646,14 +625,18 @@ module LibraAccount {
     ) {
         let new_account_addr = Signer::address_of(&new_account);
         // cannot create an account at the reserved address 0x0
-        assert(new_account_addr != CoreAddresses::VM_RESERVED_ADDRESS(), ECANNOT_CREATE_AT_VM_RESERVED);
+        assert(
+            new_account_addr != CoreAddresses::VM_RESERVED_ADDRESS(),
+            Errors::invalid_argument(ECANNOT_CREATE_AT_VM_RESERVED)
+        );
 
         // (1) publish LibraAccount
         let authentication_key = auth_key_prefix;
         Vector::append(
             &mut authentication_key, LCS::to_bytes(Signer::borrow_address(&new_account))
         );
-        assert(Vector::length(&authentication_key) == 32, EMALFORMED_AUTHENTICATION_KEY);
+        assert(Vector::length(&authentication_key) == 32, Errors::invalid_argument(EMALFORMED_AUTHENTICATION_KEY));
+        assert(!exists_at(new_account_addr), Errors::already_published(EACCOUNT));
         move_to(
             &new_account,
             LibraAccount {
@@ -669,29 +652,22 @@ module LibraAccount {
                 received_events: Event::new_event_handle<ReceivedPaymentEvent>(&new_account),
                 sent_events: Event::new_event_handle<SentPaymentEvent>(&new_account),
                 sequence_number: 0,
-                is_frozen: false,
             }
         );
-
-        // (2) TODO: publish account limits?
+        AccountFreezing::create(&new_account);
         destroy_signer(new_account);
     }
-    spec fun make_account {
-        pragma verify = true;
-    }
 
-    /// Creates the root association account in genesis.
-    public fun create_root_association_account(
+    /// Creates the libra root account in genesis.
+    public fun create_libra_root_account(
         new_account_address: address,
         auth_key_prefix: vector<u8>,
     ) {
-        assert(LibraTimestamp::is_genesis(), ENOT_GENESIS);
-        assert(new_account_address == CoreAddresses::LIBRA_ROOT_ADDRESS(), EINVALID_SINGLETON_ADDRESS);
+        LibraTimestamp::assert_genesis();
         let new_account = create_signer(new_account_address);
+        CoreAddresses::assert_libra_root(&new_account);
+        SlidingNonce::publish_nonce_resource(&new_account, &new_account);
         make_account(new_account, auth_key_prefix)
-    }
-    spec fun create_root_association_account {
-        pragma verify = true;
     }
 
     /// Create a treasury/compliance account at `new_account_address` with authentication key
@@ -701,17 +677,13 @@ module LibraAccount {
         new_account_address: address,
         auth_key_prefix: vector<u8>,
     ) {
-        assert(LibraTimestamp::is_genesis(), ENOT_GENESIS);
-        assert(Roles::has_libra_root_role(lr_account), ENOT_LIBRA_ROOT);
+        LibraTimestamp::assert_genesis();
+        Roles::assert_libra_root(lr_account);
         let new_account = create_signer(new_account_address);
         SlidingNonce::publish_nonce_resource(lr_account, &new_account);
         Event::publish_generator(&new_account);
         make_account(new_account, auth_key_prefix)
     }
-    spec fun create_treasury_compliance_account {
-        pragma verify = true;
-    }
-
 
     ///////////////////////////////////////////////////////////////////////////
     // Designated Dealer API
@@ -724,18 +696,20 @@ module LibraAccount {
         creator_account: &signer,
         new_account_address: address,
         auth_key_prefix: vector<u8>,
+        human_name: vector<u8>,
         add_all_currencies: bool,
     ) {
         let new_dd_account = create_signer(new_account_address);
         Event::publish_generator(&new_dd_account);
-        Libra::publish_preburn_to_account<CoinType>(&new_dd_account, creator_account);
-        DesignatedDealer::publish_designated_dealer_credential(&new_dd_account, creator_account);
         Roles::new_designated_dealer_role(creator_account, &new_dd_account);
+        DesignatedDealer::publish_designated_dealer_credential<CoinType>(&new_dd_account, creator_account, add_all_currencies);
         add_currencies_for_account<CoinType>(&new_dd_account, add_all_currencies);
+        DualAttestation::publish_credential(&new_dd_account, creator_account, human_name);
         make_account(new_dd_account, auth_key_prefix)
     }
     spec fun create_designated_dealer {
-        pragma verify = true;
+        // TODO(wrwg): timeout
+        pragma verify = false;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -750,25 +724,19 @@ module LibraAccount {
         new_account_address: address,
         auth_key_prefix: vector<u8>,
         human_name: vector<u8>,
-        base_url: vector<u8>,
-        compliance_public_key: vector<u8>,
         add_all_currencies: bool
     ) {
+        // TODO: restrictions on creator_account?
         let new_account = create_signer(new_account_address);
         Roles::new_parent_vasp_role(creator_account, &new_account);
-        VASP::publish_parent_vasp_credential(
-            &new_account,
-            creator_account,
-            human_name,
-            base_url,
-            compliance_public_key
-        );
+        VASP::publish_parent_vasp_credential(&new_account, creator_account);
+        DualAttestation::publish_credential(&new_account, creator_account, human_name);
         Event::publish_generator(&new_account);
         add_currencies_for_account<Token>(&new_account, add_all_currencies);
         make_account(new_account, auth_key_prefix)
     }
     spec fun create_parent_vasp_account {
-        /// TODO(wrwg): function takes very long to verify; investigate why
+        // TODO: reactivate after aborts_if soundness fix.
         pragma verify = false;
     }
 
@@ -793,35 +761,10 @@ module LibraAccount {
         make_account(new_account, auth_key_prefix)
     }
     spec fun create_child_vasp_account {
-        /// TODO(wrwg): function takes very long to verify; investigate why
+        // TODO: reactivate after aborts_if soundness fix.
         pragma verify = false;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Unhosted methods
-    ///////////////////////////////////////////////////////////////////////////
-
-    /// For now, only the association root can create an unhosted account, and it will choose not to
-    /// on mainnet
-    /// > TODO(tzakian): eventually, anyone will be able to create an unhosted wallet accunt
-    public fun create_unhosted_account<Token>(
-        creator_account: &signer,
-        new_account_address: address,
-        auth_key_prefix: vector<u8>,
-        add_all_currencies: bool
-    ) {
-        assert(Roles::has_libra_root_role(creator_account), ENOT_LIBRA_ROOT);
-        assert(!exists_at(new_account_address), EACCOUNT_ALREADY_EXISTS);
-        let new_account = create_signer(new_account_address);
-        Roles::new_unhosted_role(creator_account, &new_account);
-        Event::publish_generator(&new_account);
-        add_currencies_for_account<Token>(&new_account, add_all_currencies);
-        make_account(new_account, auth_key_prefix)
-    }
-    spec fun create_unhosted_account {
-        /// TODO(wrwg): function takes very long to verify; investigate why
-        pragma verify = false;
-    }
 
     ///////////////////////////////////////////////////////////////////////////
     // General purpose methods
@@ -840,21 +783,17 @@ module LibraAccount {
         balance_for(borrow_global<Balance<Token>>(addr))
     }
 
-    /// Add a balance of `Token` type to the sending account.
-    /// If the account is a VASP account, it must have (or be able to publish)
-    /// a limits definition and window.
+    /// Add a balance of `Token` type to the sending account
     public fun add_currency<Token>(account: &signer) {
         // aborts if `Token` is not a currency type in the system
-        assert(Libra::is_currency<Token>(), ENOT_A_CURRENCY);
+        Libra::assert_is_currency<Token>();
+        // Check that an account with this role is allowed to hold funds
+        assert(Roles::can_hold_balance(account), Errors::invalid_argument(EROLE_CANT_STORE_BALANCE));
         // aborts if this account already has a balance in `Token`
-        assert(!exists<Balance<Token>>(Signer::address_of(account)), EADD_EXISTING_CURRENCY);
-        // aborts if this is a child VASP whose parent does not have an AccountLimits resource for
-        // `Token`
-        assert(VASP::try_allow_currency<Token>(account), EPARENT_VASP_CURRENCY_LIMITS_DNE);
+        let addr = Signer::address_of(account);
+        assert(!exists<Balance<Token>>(addr), Errors::already_published(EADD_EXISTING_CURRENCY));
+
         move_to(account, Balance<Token>{ coin: Libra::zero<Token>() })
-    }
-    spec fun add_currency {
-        pragma verify = true;
     }
 
     /// Return whether the account at `addr` accepts `Token` type coins
@@ -869,23 +808,27 @@ module LibraAccount {
 
     /// Return the current sequence number at `addr`
     public fun sequence_number(addr: address): u64 acquires LibraAccount {
+        assert(exists_at(addr), Errors::not_published(EACCOUNT));
         sequence_number_for_account(borrow_global<LibraAccount>(addr))
     }
 
     /// Return the authentication key for this account
     public fun authentication_key(addr: address): vector<u8> acquires LibraAccount {
+        assert(exists_at(addr), Errors::not_published(EACCOUNT));
         *&borrow_global<LibraAccount>(addr).authentication_key
     }
 
     /// Return true if the account at `addr` has delegated its key rotation capability
     public fun delegated_key_rotation_capability(addr: address): bool
     acquires LibraAccount {
+        assert(exists_at(addr), Errors::not_published(EACCOUNT));
         Option::is_none(&borrow_global<LibraAccount>(addr).key_rotation_capability)
     }
 
     /// Return true if the account at `addr` has delegated its withdraw capability
     public fun delegated_withdraw_capability(addr: address): bool
     acquires LibraAccount {
+        assert(exists_at(addr), Errors::not_published(EACCOUNT));
         Option::is_none(&borrow_global<LibraAccount>(addr).withdrawal_capability)
     }
 
@@ -904,83 +847,85 @@ module LibraAccount {
         exists<LibraAccount>(check_addr)
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Freezing
-    ///////////////////////////////////////////////////////////////////////////
-
-    /// Freeze the account at `addr`.
-    public fun freeze_account(
-        account: &signer,
-        frozen_address: address,
-    )
-    acquires LibraAccount, AccountOperationsCapability {
-        assert(Roles::has_treasury_compliance_role(account), ENOT_TREASURY_COMPLIANCE);
-        let initiator_address = Signer::address_of(account);
-        // The libra root and TC accounts cannot be frozen
-        assert(frozen_address != CoreAddresses::LIBRA_ROOT_ADDRESS(), EACCOUNT_CANNOT_BE_FROZEN);
-        assert(frozen_address != CoreAddresses::TREASURY_COMPLIANCE_ADDRESS(), EACCOUNT_CANNOT_BE_FROZEN);
-        borrow_global_mut<LibraAccount>(frozen_address).is_frozen = true;
-        Event::emit_event<FreezeAccountEvent>(
-            &mut borrow_global_mut<AccountOperationsCapability>(CoreAddresses::LIBRA_ROOT_ADDRESS()).freeze_event_handle,
-            FreezeAccountEvent {
-                initiator_address,
-                frozen_address
-            },
-        );
-    }
-    spec fun freeze_account {
-        /// TODO(wrwg): function takes very long to verify; investigate why
-        pragma verify = false;
-    }
-
-    /// Unfreeze the account at `addr`.
-    public fun unfreeze_account(
-        account: &signer,
-        unfrozen_address: address,
-    )
-    acquires LibraAccount, AccountOperationsCapability {
-        assert(Roles::has_treasury_compliance_role(account), ENOT_TREASURY_COMPLIANCE);
-        let initiator_address = Signer::address_of(account);
-        borrow_global_mut<LibraAccount>(unfrozen_address).is_frozen = false;
-        Event::emit_event<UnfreezeAccountEvent>(
-            &mut borrow_global_mut<AccountOperationsCapability>(CoreAddresses::LIBRA_ROOT_ADDRESS()).unfreeze_event_handle,
-            UnfreezeAccountEvent {
-                initiator_address,
-                unfrozen_address
-            },
-        );
-    }
-    spec fun unfreeze_account {
-        /// TODO(wrwg): function takes very long to verify; investigate why
-        pragma verify = false;
-    }
-
-    /// Returns if the account at `addr` is frozen.
-    public fun account_is_frozen(addr: address): bool
-    acquires LibraAccount {
-        borrow_global<LibraAccount>(addr).is_frozen
-     }
-
-    /// The prologue is invoked at the beginning of every transaction
-    /// It verifies:
-    /// - The account's auth key matches the transaction's public key
-    /// - That the account has enough balance to pay for all of the gas
-    /// - That the sequence number matches the transaction's sequence key
-    fun prologue<Token>(
+    /// The prologue for module transaction
+    fun module_prologue<Token>(
         sender: &signer,
         txn_sequence_number: u64,
         txn_public_key: vector<u8>,
         txn_gas_price: u64,
         txn_max_gas_units: u64,
         txn_expiration_time: u64,
+        chain_id: u8,
+    ) acquires LibraAccount, Balance {
+        assert(
+            LibraTransactionPublishingOption::is_module_allowed(sender),
+            EPROLOGUE_MODULE_NOT_ALLOWED
+        );
+
+        prologue_common<Token>(
+            sender,
+            txn_sequence_number,
+            txn_public_key,
+            txn_gas_price,
+            txn_max_gas_units,
+            txn_expiration_time,
+            chain_id,
+        )
+    }
+    /// The prologue for script transaction
+    fun script_prologue<Token>(
+        sender: &signer,
+        txn_sequence_number: u64,
+        txn_public_key: vector<u8>,
+        txn_gas_price: u64,
+        txn_max_gas_units: u64,
+        txn_expiration_time: u64,
+        chain_id: u8,
+        script_hash: vector<u8>,
+    ) acquires LibraAccount, Balance {
+        assert(
+            LibraTransactionPublishingOption::is_script_allowed(sender, &script_hash),
+            EPROLOGUE_SCRIPT_NOT_ALLOWED
+        );
+
+        prologue_common<Token>(
+            sender,
+            txn_sequence_number,
+            txn_public_key,
+            txn_gas_price,
+            txn_max_gas_units,
+            txn_expiration_time,
+            chain_id,
+        )
+    }
+
+    /// The common prologue is invoked at the beginning of every transaction
+    /// It verifies:
+    /// - The account's auth key matches the transaction's public key
+    /// - That the account has enough balance to pay for all of the gas
+    /// - That the sequence number matches the transaction's sequence key
+    fun prologue_common<Token>(
+        sender: &signer,
+        txn_sequence_number: u64,
+        txn_public_key: vector<u8>,
+        txn_gas_price: u64,
+        txn_max_gas_units: u64,
+        txn_expiration_time: u64,
+        chain_id: u8,
     ) acquires LibraAccount, Balance {
         let transaction_sender = Signer::address_of(sender);
 
-        // FUTURE: Make these error codes sequential
+        // Check that the chain ID stored on-chain matches the chain ID specified by the transaction
+        assert(ChainId::get() == chain_id, EPROLOGUE_BAD_CHAIN_ID);
+
         // Verify that the transaction sender's account exists
         assert(exists_at(transaction_sender), EPROLOGUE_ACCOUNT_DNE);
 
-        assert(!account_is_frozen(transaction_sender), EPROLOGUE_ACCOUNT_FROZEN);
+        // We check whether this account is frozen, if it is no transaction can be sent from it.
+        assert(
+            !AccountFreezing::account_is_frozen(transaction_sender),
+            EPROLOGUE_ACCOUNT_FROZEN
+        );
 
         // Load the transaction sender's account
         let sender_account = borrow_global_mut<LibraAccount>(transaction_sender);
@@ -992,6 +937,10 @@ module LibraAccount {
         );
 
         // Check that the account has enough balance for all of the gas
+        assert(
+            (txn_gas_price as u128) * (txn_max_gas_units as u128) <= MAX_U64,
+             EPROLOGUE_CANT_PAY_GAS_DEPOSIT
+        );
         let max_transaction_fee = txn_gas_price * txn_max_gas_units;
         // Don't grab the balance if the transaction fee is zero
         if (max_transaction_fee > 0) {
@@ -1000,13 +949,19 @@ module LibraAccount {
         };
 
         // Check that the transaction sequence number matches the sequence number of the account
-        assert(txn_sequence_number >= sender_account.sequence_number, EPROLOGUE_SEQUENCE_NUMBER_TOO_OLD);
-        assert(txn_sequence_number == sender_account.sequence_number, EPROLOGUE_SEQUENCE_NUMBER_TOO_NEW);
-        assert(LibraTransactionTimeout::is_valid_transaction_timestamp(txn_expiration_time), EPROLOGUE_TRANSACTION_EXPIRED);
-    }
-    spec fun prologue {
-        /// TODO(wrwg): function takes very long to verify; investigate why
-        pragma verify = false;
+        // TODO: the below assertions overlap, fix this.
+        assert(
+            txn_sequence_number >= sender_account.sequence_number,
+            EPROLOGUE_SEQUENCE_NUMBER_TOO_OLD
+        );
+        assert(
+            txn_sequence_number == sender_account.sequence_number,
+            EPROLOGUE_SEQUENCE_NUMBER_TOO_NEW
+        );
+        assert(
+            LibraTransactionTimeout::is_valid_transaction_timestamp(txn_expiration_time),
+            EPROLOGUE_TRANSACTION_EXPIRED
+        );
     }
 
     /// Collects gas and bumps the sequence number for executing a transaction
@@ -1016,9 +971,11 @@ module LibraAccount {
         txn_sequence_number: u64,
     ) acquires LibraAccount, Balance, AccountOperationsCapability {
         // Load the transaction sender's account and balance resources
+        assert(exists_at(sender), Errors::not_published(EACCOUNT));
         let sender_account = borrow_global_mut<LibraAccount>(sender);
 
         // Bump the sequence number
+        assert(sender_account.sequence_number < (MAX_U64 as u64), Errors::limit_exceeded(ESEQUENCE_NUMBER));
         sender_account.sequence_number = txn_sequence_number + 1;
 
         if (transaction_fee_amount > 0) {
@@ -1033,9 +990,6 @@ module LibraAccount {
             )
         }
     }
-    spec fun epilogue {
-        pragma verify = true;
-    }
 
     /// The success_epilogue is invoked at the end of successfully executed transactions.
     fun success_epilogue<Token>(
@@ -1048,17 +1002,16 @@ module LibraAccount {
         let sender = Signer::address_of(account);
 
         // Charge for gas
-        let transaction_fee_amount = txn_gas_price * (txn_max_gas_units - gas_units_remaining);
+        assert(txn_max_gas_units >= gas_units_remaining, Errors::invalid_argument(EGAS));
+        let gas_used = txn_max_gas_units - gas_units_remaining;
+        assert((txn_gas_price as u128) * (gas_used as u128) <= MAX_U64, Errors::limit_exceeded(EGAS));
+        let transaction_fee_amount = txn_gas_price * gas_used;
 
         // Load the transaction sender's balance resource only if it exists. If it doesn't we default the value to 0
         let sender_balance = if (exists<Balance<Token>>(sender)) balance<Token>(sender) else 0;
         assert(sender_balance >= transaction_fee_amount, EPROLOGUE_CANT_PAY_GAS_DEPOSIT);
         epilogue<Token>(sender, transaction_fee_amount, txn_sequence_number);
     }
-    spec fun success_epilogue {
-        pragma verify = true;
-    }
-
 
     /// The failure_epilogue is invoked at the end of transactions when the transaction is aborted during execution or
     /// during `success_epilogue`.
@@ -1071,18 +1024,20 @@ module LibraAccount {
     ) acquires LibraAccount, Balance, AccountOperationsCapability {
         let sender = Signer::address_of(account);
         // Charge for gas
-        let transaction_fee_amount = txn_gas_price * (txn_max_gas_units - gas_units_remaining);
+        assert(txn_max_gas_units >= gas_units_remaining, Errors::invalid_argument(EGAS));
+        let gas_used = txn_max_gas_units - gas_units_remaining;
+        assert((txn_gas_price as u128) * (gas_used as u128) <= MAX_U64, Errors::limit_exceeded(EGAS));
+        let transaction_fee_amount = txn_gas_price * gas_used;
 
         epilogue<Token>(sender, transaction_fee_amount, txn_sequence_number);
-    }
-    spec fun failure_epilogue {
-        pragma verify = true;
     }
 
     /// Bump the sequence number of an account. This function should be used only for bumping the sequence number when
     /// a writeset transaction is committed.
     fun bump_sequence_number(signer: &signer) acquires LibraAccount {
-        let sender_account = borrow_global_mut<LibraAccount>(Signer::address_of(signer));
+        let addr = Signer::address_of(signer);
+        assert(exists_at(addr), Errors::not_published(EACCOUNT));
+        let sender_account = borrow_global_mut<LibraAccount>(addr);
         sender_account.sequence_number = sender_account.sequence_number + 1;
     }
 
@@ -1094,29 +1049,28 @@ module LibraAccount {
         creator_account: &signer,
         new_account_address: address,
         auth_key_prefix: vector<u8>,
+        human_name: vector<u8>,
     ) {
-        assert(Roles::has_libra_root_role(creator_account), ENOT_LIBRA_ROOT);
         let new_account = create_signer(new_account_address);
+        // The creator account is verified to have the libra root role in `Roles::new_validator_role`
+        Roles::new_validator_role(creator_account, &new_account);
         Event::publish_generator(&new_account);
-        ValidatorConfig::publish(&new_account, creator_account);
+        ValidatorConfig::publish(&new_account, creator_account, human_name);
         make_account(new_account, auth_key_prefix)
-    }
-    spec fun create_validator_account {
-        pragma verify = true;
     }
 
     public fun create_validator_operator_account(
         creator_account: &signer,
         new_account_address: address,
         auth_key_prefix: vector<u8>,
+        human_name: vector<u8>,
     ) {
-        assert(Roles::has_libra_root_role(creator_account), ENOT_LIBRA_ROOT);
         let new_account = create_signer(new_account_address);
+        // The creator account is verified to have the libra root role in `Roles::new_validator_operator_role`
+        Roles::new_validator_operator_role(creator_account, &new_account);
         Event::publish_generator(&new_account);
+        ValidatorOperatorConfig::publish(&new_account, creator_account, human_name);
         make_account(new_account, auth_key_prefix)
-    }
-    spec fun create_validator_operator_account {
-        pragma verify = true;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -1126,27 +1080,79 @@ module LibraAccount {
     // ****************** SPECIFICATIONS *******************
 
     spec module {
-        pragma verify = true;
+        pragma verify;
 
         /// Returns field `key_rotation_capability` of the
         /// LibraAccount under `addr`.
-        define spec_get_key_rotation_cap(addr: address):
-            Option<KeyRotationCapability> {
+        define spec_get_key_rotation_cap(addr: address): Option<KeyRotationCapability> {
             global<LibraAccount>(addr).key_rotation_capability
         }
 
         /// Returns true if the LibraAccount at `addr` holds
         /// `KeyRotationCapability` for itself.
         define spec_holds_own_key_rotation_cap(addr: address): bool {
-            Option::spec_is_some(spec_get_key_rotation_cap(addr))
-            && addr == Option::spec_value_inside(
+            Option::is_some(spec_get_key_rotation_cap(addr))
+            && addr == Option::borrow(
                 spec_get_key_rotation_cap(addr)).account_address
         }
 
         /// Returns true if `AccountOperationsCapability` is published.
         define spec_has_account_operations_cap(): bool {
-            exists<AccountOperationsCapability>(CoreAddresses::SPEC_LIBRA_ROOT_ADDRESS())
+            exists<AccountOperationsCapability>(CoreAddresses::LIBRA_ROOT_ADDRESS())
+        }
+
+        define spec_has_key_rotation_cap(addr: address): bool {
+            Option::is_some(global<LibraAccount>(addr).key_rotation_capability)
+        }
+
+        /// Returns field `withdrawal_capability` of LibraAccount under `addr`.
+        define spec_get_withdraw_cap(addr: address): Option<WithdrawCapability> {
+            global<LibraAccount>(addr).withdrawal_capability
+        }
+
+        /// Returns true if the LibraAccount at `addr` holds a
+        /// `WithdrawCapability`.
+        define spec_has_withdraw_cap(addr: address): bool {
+            Option::is_some(spec_get_withdraw_cap(addr))
+        }
+
+        /// Returns true if the LibraAccount at `addr` holds
+        /// `WithdrawCapability` for itself.
+        define spec_holds_own_withdraw_cap(addr: address): bool {
+            spec_has_withdraw_cap(addr)
+            && addr == Option::borrow(spec_get_withdraw_cap(addr)).account_address
         }
     }
+
+    spec schema EnsuresHasKeyRotationCap {
+        account: signer;
+        ensures spec_has_key_rotation_cap(Signer::spec_address_of(account));
+    }
+
+    spec schema EnsuresWithdrawalCap {
+        account: signer;
+        ensures spec_has_withdraw_cap(Signer::spec_address_of(account));
+    }
+
+    spec module {
+        /// the permission "RotateAuthenticationKey(addr)" is granted to the account at addr [B27].
+        apply EnsuresHasKeyRotationCap{account: new_account} to make_account;
+
+        /// the permission "WithdrawalCapability(addr)" is granted to the account at addr [B28].
+        apply EnsuresWithdrawalCap{account: new_account} to make_account;
+    }
+
+    spec module {
+        /// The LibraAccount under addr holds either no withdraw capability
+        /// (withdraw cap has been delegated) or the withdraw capability for addr itself.
+        invariant [global] forall addr1: address where exists_at(addr1):
+            delegated_withdraw_capability(addr1) || spec_holds_own_withdraw_cap(addr1);
+
+        /// The LibraAccount under addr holds either no key rotation capability
+        /// (key rotation cap has been delegated) or the key rotation capability for addr itself.
+        invariant [global] forall addr1: address where exists_at(addr1):
+            delegated_key_rotation_capability(addr1) || spec_holds_own_key_rotation_cap(addr1);
+    }
+
 }
 }

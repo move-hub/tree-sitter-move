@@ -1,91 +1,65 @@
 ====
-spec_block
-====
-spec module {
-};
-spec fun abc {};
-spec struct T {};
-spec schema T<A, B> {};
-spec {};
-----
-(source_file
-  (spec_block
-    body: (spec_body))
-  (spec_block
-    (function_identifier)
-    body: (spec_body))
-  (spec_block
-    (struct_identifier)
-    body: (spec_body))
-  (spec_block
-    (struct_identifier)
-    type_parameters: (type_parameters
-      (type_parameter
-        (type_parameter_identifier))
-      (type_parameter
-        (type_parameter_identifier)))
-    body: (spec_body))
-  (spec_block
-    body: (spec_body)))
-
-====
 spec_block_member
 ====
+
 spec {
   invariant update a + 1;
   assert 1==1;
   ensures a > 1;
   include a;
-  apply a to Hello*World<T,B>;
+  apply a to Hello*World<T>;
   apply b to World* except Worlda*, Worldbc;
   pragma a=1, b=2;
   global b: u8;
-  define spec_func<A, B>(a: A, b: B): C {}
+  define spec_func<A>(a: A): C {}
   native define spec_native_func(): C;
 };
 
 ----
+
 (source_file
   (spec_block
     body: (spec_body
       (spec_invariant
-        (binary_expression
+        kind: (condition_kind)
+        modifier: (invariant_modifier)
+        exp: (binary_expression
           lhs: (name_expression
-            (module_access
-              (identifier)))
+            access: (module_access
+              member: (identifier)))
           operator: (binary_operator)
           rhs: (num_literal)))
       (spec_condition
-        (binary_expression
+        kind: (condition_kind)
+        exp: (binary_expression
           lhs: (num_literal)
           operator: (binary_operator)
           rhs: (num_literal)))
       (spec_condition
-        (binary_expression
+        kind: (condition_kind)
+        exp: (binary_expression
           lhs: (name_expression
-            (module_access
-              (identifier)))
+            access: (module_access
+              member: (identifier)))
           operator: (binary_operator)
           rhs: (num_literal)))
       (spec_include
         (name_expression
-          (module_access
-            (identifier))))
+          access: (module_access
+            member: (identifier))))
       (spec_apply
         exp: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         (spec_apply_pattern
           name_pattern: (spec_apply_name_pattern)
           type_parameters: (type_parameters
             (type_parameter
-              (type_parameter_identifier))
-            (type_parameter
               (type_parameter_identifier)))))
       (spec_apply
         exp: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         (spec_apply_pattern
           name_pattern: (spec_apply_name_pattern))
         (spec_apply_pattern
@@ -93,22 +67,20 @@ spec {
         (spec_apply_pattern
           name_pattern: (spec_apply_name_pattern)))
       (spec_pragma
-        (spec_pragma_property
+        (spec_property
           (identifier)
           (num_literal))
-        (spec_pragma_property
+        (spec_property
           (identifier)
           (num_literal)))
       (spec_variable
         name: (identifier)
         type: (apply_type
           (module_access
-            (identifier))))
+            member: (identifier))))
       (usual_spec_function
         name: (function_identifier)
         type_parameters: (type_parameters
-          (type_parameter
-            (type_parameter_identifier))
           (type_parameter
             (type_parameter_identifier)))
         params: (func_params
@@ -116,19 +88,14 @@ spec {
             name: (variable_identifier)
             type: (apply_type
               (module_access
-                (identifier))))
-          (function_parameter
-            name: (variable_identifier)
-            type: (apply_type
-              (module_access
-                (identifier)))))
+                member: (identifier)))))
         return_type: (apply_type
           (module_access
-            (identifier)))
+            member: (identifier)))
         body: (block))
       (native_spec_function
         name: (function_identifier)
         params: (func_params)
         return_type: (apply_type
           (module_access
-            (identifier)))))))
+            member: (identifier)))))))

@@ -22,114 +22,110 @@ while (i < len)
   (while_expression
     eb: (binary_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       operator: (binary_operator)
       rhs: (name_expression
-        (module_access
-          (identifier))))
+        access: (module_access
+          member: (identifier))))
     body: (call_expression
-      (name_expression
-        (module_access
-          (identifier)))
+      access: (module_access
+        member: (identifier))
       args: (arg_list
         (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         (block
           (assign_expression
             lhs: (name_expression
-              (module_access
-                (identifier)))
+              access: (module_access
+                member: (identifier)))
             rhs: (binary_expression
               lhs: (name_expression
-                (module_access
-                  (identifier)))
+                access: (module_access
+                  member: (identifier)))
               operator: (binary_operator)
               rhs: (num_literal)))
           (name_expression
-            (module_access
-              (identifier)))))))
+            access: (module_access
+              member: (identifier)))))))
   (while_expression
     eb: (binary_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       operator: (binary_operator)
       rhs: (name_expression
-        (module_access
-          (identifier))))
+        access: (module_access
+          member: (identifier))))
     body: (block
       (call_expression
-        (name_expression
-          (module_access
-            (identifier)))
+        access: (module_access
+          member: (identifier))
         args: (arg_list
           (name_expression
-            (module_access
-              (identifier)))
+            access: (module_access
+              member: (identifier)))
           (name_expression
-            (module_access
-              (identifier)))))))
+            access: (module_access
+              member: (identifier)))))))
   (while_expression
     eb: (binary_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       operator: (binary_operator)
       rhs: (name_expression
-        (module_access
-          (identifier))))
+        access: (module_access
+          member: (identifier))))
     body: (while_expression
       eb: (binary_expression
         lhs: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         operator: (binary_operator)
         rhs: (name_expression
-          (module_access
-            (identifier))))
+          access: (module_access
+            member: (identifier))))
       body: (call_expression
-        (name_expression
-          (module_access
-            (identifier)))
+        access: (module_access
+          member: (identifier))
         args: (arg_list
           (name_expression
-            (module_access
-              (identifier)))
+            access: (module_access
+              member: (identifier)))
           (name_expression
-            (module_access
-              (identifier)))))))
+            access: (module_access
+              member: (identifier)))))))
   (while_expression
     eb: (binary_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       operator: (binary_operator)
       rhs: (name_expression
-        (module_access
-          (identifier))))
+        access: (module_access
+          member: (identifier))))
     body: (while_expression
       eb: (binary_expression
         lhs: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         operator: (binary_operator)
         rhs: (name_expression
-          (module_access
-            (identifier))))
+          access: (module_access
+            member: (identifier))))
       body: (block
         (call_expression
-          (name_expression
-            (module_access
-              (identifier)))
+          access: (module_access
+            member: (identifier))
           args: (arg_list
             (name_expression
-              (module_access
-                (identifier)))
+              access: (module_access
+                member: (identifier)))
             (name_expression
-              (module_access
-                (identifier)))))))))
+              access: (module_access
+                member: (identifier)))))))))

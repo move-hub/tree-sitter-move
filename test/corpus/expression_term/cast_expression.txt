@@ -11,46 +11,46 @@ cast_expression
 (source_file
   (cast_expression
     exp: (name_expression
-      (module_access
-        (identifier)))
+      access: (module_access
+        member: (identifier)))
     ty: (apply_type
       (module_access
-        (identifier))))
+        member: (identifier))))
   (cast_expression
     exp: (name_expression
-      (module_access
-        (identifier)))
+      access: (module_access
+        member: (identifier)))
     ty: (ref_type
       (apply_type
         (module_access
-          (identifier)))))
+          member: (identifier)))))
   (cast_expression
     exp: (expression_list
       (binary_expression
         lhs: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         operator: (binary_operator)
         rhs: (name_expression
-          (module_access
-            (identifier)))))
+          access: (module_access
+            member: (identifier)))))
     ty: (apply_type
       (module_access
-        (identifier))))
+        member: (identifier))))
   (cast_expression
     exp: (expression_list
       (binary_expression
         lhs: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         operator: (binary_operator)
         rhs: (name_expression
-          (module_access
-            (identifier)))))
+          access: (module_access
+            member: (identifier)))))
     ty: (apply_type
       (module_access
-        (identifier))
+        member: (identifier))
       type_arguments: (type_arguments
         (apply_type
           (module_access
-            (identifier)))))))
+            member: (identifier)))))))

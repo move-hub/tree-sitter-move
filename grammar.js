@@ -40,12 +40,14 @@ const PREC = {
 module.exports = grammar({
   name: 'move',
   extras: $ => [/\s/, $.line_comment, $.block_comment],
+  word: $ => $.identifier,
+  supertypes: $ => [$._spec_block_target],
   conflicts: $ => [
     [$._struct_identifier, $._variable_identifier, $._function_identifier],
     [$._struct_identifier, $._function_identifier],
     [$.function_type_params],
     // [$.name_expression, $.quantifier_expression],
-    [$.name_expression],
+    [$.name_expression, $.call_expression, $.pack_expression],
   ],
 
   rules: {
@@ -79,26 +81,19 @@ module.exports = grammar({
       "}"
     ),
     // parse use declaration
-    use_decl: $ => seq(
-      'use',
-      $._module_ident,
-      optional(
-        choice(
-          $._use_alias, // use moudle
-          seq('::', $.use_member), // use module member
-          seq('::', '{', sepBy1(',', $.use_member), '}') // use multi module members
-        )
-      ),
-      ';'
-    ),
+    use_decl: $ => seq('use', choice($.use_module, $.use_module_member, $.use_module_members), ';'),
+
+    // use 0x1::A (as AA);
+    use_module: $ => seq($._module_identity, optional(seq('as', field('alias', $._module_identifier)))),
+    // use 0x1::A::T as TT;
+    // use 0x1::A::f as ff;
+    use_module_member: $ => seq($._module_identity, '::', field('use_member', $.use_member)),
+    use_module_members: $ => seq($._module_identity, '::', '{', sepBy1(',', field('use_member', $.use_member)), '}'),
     use_member: $ => seq(
       field('member', $.identifier),
-      optional($._use_alias),
+      optional(seq('as', field('alias', $.identifier)))
     ),
-    _use_alias: $ => seq(
-      'as',
-      field('as', $._module_identifier)
-    ),
+
 
 
     module_definition: $ => {
@@ -189,19 +184,24 @@ module.exports = grammar({
     //// Spec block start
     spec_block: $ => seq(
       'spec',
-      optional(choice(
-        seq('fun', $._function_identifier),
-        seq('struct', $._struct_identifier),
-        'module',
-        seq(
-          'schema',
-          $._struct_identifier,
-          optional(field('type_parameters', $.type_parameters)),
-        ),
-      )),
-      field('body', $.spec_body)
+      choice(
+        $._spec_function,
+        seq(optional(field('target', $._spec_block_target)), field('body', $.spec_body))
+      )
     ),
-
+    _spec_block_target: $ => choice(
+      $.spec_block_target_fun,
+      $.spec_block_target_struct,
+      alias('module', $.spec_block_target_module),
+      $.spec_block_target_schema,
+    ),
+    spec_block_target_fun: $ => seq('fun', $._function_identifier),
+    spec_block_target_struct: $ => seq('struct', $._struct_identifier),
+    spec_block_target_schema: $ => seq(
+      'schema',
+      field('name', $._struct_identifier),
+      optional(field('type_parameters', $.type_parameters)),
+    ),
     spec_body: $ => seq(
       '{',
       repeat($.use_decl),
@@ -215,22 +215,65 @@ module.exports = grammar({
       $.spec_include,
       $.spec_apply,
       $.spec_pragma,
-      $.spec_variable
+      $.spec_variable,
+      $.spec_let,
     ),
-    spec_condition: $ => seq(
+    spec_let: $ => seq(
+      'let',
+      field('name', $.identifier),
+      '=',
+      field('def', $._expression),
+      ';'
+    ),
+    spec_condition: $ => choice(
+      $._spec_condition,
+      $._spec_abort_if,
+      $._spec_abort_with_or_modifies,
+    ),
+    _spec_condition_kind: $ => choice(
+      'assert',
+      'assume',
+      'decreases',
+      'ensures',
+      'succeeds_if',
+    ),
+    _spec_condition: $ => seq(
       choice(
-        'assert', 'assume', 'decreases', 'aborts_if', 'ensures', 'succeeds_if',
-        seq('requires', optional('module'))
+        field('kind', alias($._spec_condition_kind, $.condition_kind)),
+        seq(
+          field('kind', alias('requires', $.condition_kind)),
+          optional('module'),
+        )
       ),
-      $._expression,
+      optional(field('condition_properties', $.condition_properties)),
+      field('exp', $._expression),
       ';'
     ),
+    _spec_abort_if: $ => seq(
+      field('kind', alias('aborts_if', $.condition_kind)),
+      optional(field('condition_properties', $.condition_properties)),
+      field('exp', $._expression),
+      optional(seq('with', field('additional_exp', $._expression))),
+      ';'
+    ),
+    _spec_abort_with_or_modifies: $ => seq(
+      field('kind', alias(choice(
+        'aborts_with',
+        'modifies'
+      ), $.condition_kind)),
+      optional(field('condition_properties', $.condition_properties)),
+      sepBy1(',', field('additional_exp', $._expression)),
+      ';'
+    ),
+
     spec_invariant: $ => seq(
-      'invariant',
-      optional(choice('update', 'pack', 'unpack', 'module')),
-      $._expression,
+      field('kind', alias('invariant', $.condition_kind)),
+      optional(field('modifier', alias(choice('update', 'pack', 'unpack', 'module'), $.invariant_modifier))),
+      optional(field('condition_properties', $.condition_properties)),
+      field('exp', $._expression),
       ';'
     ),
+    condition_properties: $ => seq('[', sepBy(',', $.spec_property), ']'),
     spec_include: $ => seq('include', $._expression, ';'),
 
     spec_apply: $ => seq(
@@ -250,10 +293,10 @@ module.exports = grammar({
 
     spec_pragma: $ => seq(
       'pragma',
-      sepBy(',', $.spec_pragma_property),
+      sepBy(',', $.spec_property),
       ';'
     ),
-    spec_pragma_property: $ => seq($.identifier, optional(seq('=', $._literal_value))),
+    spec_property: $ => seq($.identifier, optional(seq('=', $._literal_value))),
 
     spec_variable: $ => seq(
       optional(choice('global', 'local')),
@@ -316,12 +359,23 @@ module.exports = grammar({
       'signer',
       'bytearray',
     ),
+
     module_access: $ => choice(
-      $.identifier,
-      seq(field('module', $._module_identifier), '::', $.identifier),
-      seq($._module_ident, '::', $.identifier)
+      field('member', alias($._reserved_identifier, $.identifier)),
+      field('member', $.identifier),
+      seq(
+        field('module', $._module_identifier),
+        '::',
+        field('member', $.identifier)
+      ),
+      seq(
+        $._module_identity,
+        '::',
+        field('member', $.identifier)
+      ),
     ),
-    _module_ident: $ => seq(
+
+    _module_identity: $ => seq(
       field('address', $.address_literal),
       '::',
       field('module', $._module_identifier)
@@ -396,15 +450,13 @@ module.exports = grammar({
       $.quantifier_expression
     ),
 
-    quantifier_expression: $ => seq(
-      // a hack to resolve conflict with module_access.
-      // TODO: make a better soluation.
-      token(/(forall|exists)[\s\n]/),
+    quantifier_expression: $ => prec.right(seq(
+      choice($._forall, $._exists),
       $.quantifier_bindings,
       optional(seq('where', $._expression)),
       ':',
       $._expression
-    ),
+    )),
     quantifier_bindings: $ => sepBy1(',', $.quantifier_binding),
     quantifier_binding: $ => choice(
       seq($.identifier, ':', $._type),
@@ -534,7 +586,9 @@ module.exports = grammar({
     _expression_term: $ => choice(
       $.break_expression,
       $.continue_expression,
-      $._name_exp,
+      $.name_expression,
+      $.call_expression,
+      $.pack_expression,
       $._literal_value,
       $.unit_expression,
       $.expression_list,
@@ -548,29 +602,27 @@ module.exports = grammar({
     ),
     break_expression: $ => choice('break'),
     continue_expression: $ => choice('continue'),
-    _name_exp: $ => choice(
-      $.name_expression,
-      $.pack_expression,
-      $.call_expression,
+    name_expression: $ => seq(
+      field('access', $.module_access),
+      optional(field('type_arguments', $.type_arguments)),
     ),
-    name_expression: $ => prec.dynamic(-1, seq(
-      $.module_access,
-      optional(field('type_arguments', $.type_arguments))
-    )),
+    call_expression: $ => seq(
+      field('access', $.module_access),
+      optional(field('type_arguments', $.type_arguments)),
+      field('args', $.arg_list),
+    ),
     pack_expression: $ => seq(
-      $.name_expression,
+      field('access', $.module_access),
+      optional(field('type_arguments', $.type_arguments)),
       field('body', $.field_initialize_list),
     ),
+
     field_initialize_list: $ => seq(
       '{',
       sepBy(',', $.exp_field),
       '}'
     ),
 
-    call_expression: $ => prec(PREC.call, seq(
-      $.name_expression,
-      field('args', $.arg_list),
-    )),
     arg_list: $ => seq(
       '(',
       sepBy(',', $._expression),
@@ -672,6 +724,11 @@ module.exports = grammar({
     _type_parameter_identifier: $ => alias($.identifier, $.type_parameter_identifier),
 
     identifier: $ => /[a-zA-Z_][0-9a-zA-Z_]*/,
+    _reserved_identifier: $ => choice($._forall, $._exists),
+
+    _forall: $ => 'forall',
+    _exists: $ => 'exists',
+
 
     line_comment: $ => token(seq(
       '//', /.*/

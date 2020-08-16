@@ -11,26 +11,25 @@ a().b;
 (source_file
   (dot_expression
     e: (name_expression
-      (module_access
-        (identifier)))
+      access: (module_access
+        member: (identifier)))
     f: (field_identifier))
   (dot_expression
     e: (call_expression
-      (name_expression
-        (module_access
-          (identifier)))
+      access: (module_access
+        member: (identifier))
       args: (arg_list))
     f: (field_identifier))
   (borrow_expression
     exp: (dot_expression
       e: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       f: (field_identifier)))
   (dot_expression
     e: (expression_list
       (borrow_expression
         exp: (name_expression
-          (module_access
-            (identifier)))))
+          access: (module_access
+            member: (identifier)))))
     f: (field_identifier)))

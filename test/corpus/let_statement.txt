@@ -18,14 +18,14 @@ let A{b: B{b: bb}, c}: A = 10;
         (variable_identifier)))
     type: (apply_type
       (module_access
-        (identifier))))
+        member: (identifier))))
   (let_statement
     binds: (bind_list
       (bind_var
         (variable_identifier)))
     type: (apply_type
       (module_access
-        (identifier)))
+        member: (identifier)))
     exp: (num_literal))
   (let_statement
     binds: (bind_list
@@ -45,25 +45,25 @@ let A{b: B{b: bb}, c}: A = 10;
     binds: (bind_list
       (bind_unpack
         (module_access
-          (identifier))
+          member: (identifier))
         bind_fields: (bind_fields
           (bind_field
             field: (field_identifier)))))
     type: (apply_type
       (module_access
-        (identifier)))
+        member: (identifier)))
     exp: (num_literal))
   (let_statement
     binds: (bind_list
       (bind_unpack
         (module_access
-          (identifier))
+          member: (identifier))
         bind_fields: (bind_fields
           (bind_field
             field: (field_identifier)
             bind: (bind_unpack
               (module_access
-                (identifier))
+                member: (identifier))
               bind_fields: (bind_fields
                 (bind_field
                   field: (field_identifier)
@@ -73,5 +73,5 @@ let A{b: B{b: bb}, c}: A = 10;
             field: (field_identifier)))))
     type: (apply_type
       (module_access
-        (identifier)))
+        member: (identifier)))
     exp: (num_literal)))

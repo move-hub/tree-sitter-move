@@ -7,15 +7,14 @@ M::borrow_global_mut<A>(sender);
 
 (source_file
   (call_expression
-    (name_expression
-      (module_access
-        module: (module_identifier)
-        (identifier))
-      type_arguments: (type_arguments
-        (apply_type
-          (module_access
-            (identifier)))))
+    access: (module_access
+      module: (module_identifier)
+      member: (identifier))
+    type_arguments: (type_arguments
+      (apply_type
+        (module_access
+          member: (identifier))))
     args: (arg_list
       (name_expression
-        (module_access
-          (identifier))))))
+        access: (module_access
+          member: (identifier))))))

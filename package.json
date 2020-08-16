@@ -8,6 +8,7 @@
   },
   "main": "index.js",
   "scripts": {
+    "build": "tree-sitter generate",
     "test": "tree-sitter test",
     "parse-examples": "tree-sitter parse -q examples/**/*.move",
     "release": "standard-version"

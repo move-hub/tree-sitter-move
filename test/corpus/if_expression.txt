@@ -22,8 +22,8 @@ else {};
   (if_expression
     eb: (binary_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       operator: (binary_operator)
       rhs: (address_literal))
     et: (block)
@@ -31,34 +31,34 @@ else {};
   (if_expression
     eb: (binary_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       operator: (binary_operator)
       rhs: (name_expression
-        (module_access
-          (identifier))))
+        access: (module_access
+          member: (identifier))))
     et: (abort_expression
       abort: (num_literal)))
   (if_expression
     eb: (binary_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       operator: (binary_operator)
       rhs: (name_expression
-        (module_access
-          (identifier))))
+        access: (module_access
+          member: (identifier))))
     et: (abort_expression
       abort: (num_literal))
     ef: (if_expression
       eb: (binary_expression
         lhs: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         operator: (binary_operator)
         rhs: (name_expression
-          (module_access
-            (identifier))))
+          access: (module_access
+            member: (identifier))))
       et: (return_expression
         return: (num_literal))
       ef: (block))))

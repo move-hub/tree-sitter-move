@@ -24,17 +24,17 @@ block
       exp: (num_literal))
     (assign_expression
       lhs: (name_expression
-        (module_access
-          (identifier)))
+        access: (module_access
+          member: (identifier)))
       rhs: (binary_expression
         lhs: (name_expression
-          (module_access
-            (identifier)))
+          access: (module_access
+            member: (identifier)))
         operator: (binary_operator)
         rhs: (num_literal)))
     (name_expression
-      (module_access
-        (identifier))))
+      access: (module_access
+        member: (identifier))))
   (block
     (let_statement
       binds: (bind_list
@@ -51,5 +51,5 @@ block
         (num_literal)
         (num_literal)))
     (name_expression
-      (module_access
-        (identifier)))))
+      access: (module_access
+        member: (identifier)))))

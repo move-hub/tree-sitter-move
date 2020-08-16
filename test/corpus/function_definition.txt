@@ -19,7 +19,7 @@ public fun deposit<Token>(payee: address, to_deposit: Libra::T<Token>) acquires 
     params: (func_params)
     acquires: (resource_accquires
       (module_access
-        (identifier))))
+        member: (identifier))))
   (usual_function_definition
     name: (function_identifier)
     type_parameters: (type_parameters
@@ -30,20 +30,20 @@ public fun deposit<Token>(payee: address, to_deposit: Libra::T<Token>) acquires 
         name: (variable_identifier)
         type: (apply_type
           (module_access
-            (identifier))))
+            member: (identifier))))
       (function_parameter
         name: (variable_identifier)
         type: (apply_type
           (module_access
             module: (module_identifier)
-            (identifier))
+            member: (identifier))
           type_arguments: (type_arguments
             (apply_type
               (module_access
-                (identifier)))))))
+                member: (identifier)))))))
     acquires: (resource_accquires
       (module_access
-        (identifier))
+        member: (identifier))
       (module_access
-        (identifier)))
+        member: (identifier)))
     body: (block)))

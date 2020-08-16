@@ -20,16 +20,16 @@ resource struct EventHandle<T: copyable> {
         field: (field_identifier)
         type: (apply_type
           (module_access
-            (identifier))))
+            member: (identifier))))
       (field_annotation
         field: (field_identifier)
         type: (apply_type
           (module_access
-            (identifier))
+            member: (identifier))
           type_arguments: (type_arguments
             (apply_type
               (module_access
-                (identifier)))))))))
+                member: (identifier)))))))))
 
 
 ====

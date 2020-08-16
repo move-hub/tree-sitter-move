@@ -11,31 +11,36 @@ use 0x0::A::{member1 as m1, member2 as m2, member3};
 ---
 (source_file
   (use_decl
+    (use_module
       address: (address_literal)
-      module: (module_identifier))
+      module: (module_identifier)))
   (use_decl
+    (use_module
       address: (address_literal)
       module: (module_identifier)
-    as: (module_identifier))
+      alias: (module_identifier)))
   (use_decl
+    (use_module_member
       address: (address_literal)
       module: (module_identifier)
-    (use_member
-      member: (identifier)))
+      use_member: (use_member
+        member: (identifier))))
   (use_decl
+    (use_module_member
       address: (address_literal)
       module: (module_identifier)
-    (use_member
-      member: (identifier)
-      as: (module_identifier)))
+      use_member: (use_member
+        member: (identifier)
+        alias: (identifier))))
   (use_decl
+    (use_module_members
       address: (address_literal)
       module: (module_identifier)
-    (use_member
-      member: (identifier)
-      as: (module_identifier))
-    (use_member
-      member: (identifier)
-      as: (module_identifier))
-    (use_member
-      member: (identifier))))
+      use_member: (use_member
+        member: (identifier)
+        alias: (identifier))
+      use_member: (use_member
+        member: (identifier)
+        alias: (identifier))
+      use_member: (use_member
+        member: (identifier)))))

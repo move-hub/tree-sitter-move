@@ -15,13 +15,13 @@ continue;
   (unit_expression)
   (expression_list
     (name_expression
-      (module_access
-        (identifier)))
+      access: (module_access
+        member: (identifier)))
     (num_literal))
   (annotate_expression
     exp: (name_expression
-      (module_access
-        (identifier)))
+      access: (module_access
+        member: (identifier)))
     ty: (apply_type
       (module_access
-        (identifier)))))
+        member: (identifier)))))

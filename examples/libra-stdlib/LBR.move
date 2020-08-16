@@ -12,14 +12,20 @@ address 0x1 {
 /// amount of each coin is returned when an `LBR` coin is "unpacked."
 
 module LBR {
+    use 0x1::AccountLimits;
     use 0x1::Coin1::Coin1;
     use 0x1::Coin2::Coin2;
     use 0x1::CoreAddresses;
+    use 0x1::Errors;
     use 0x1::FixedPoint32::{Self, FixedPoint32};
     use 0x1::Libra::{Self, Libra,
     // RegisterNewCurrency
     };
-    use 0x1::Signer;
+    use 0x1::LibraTimestamp;
+
+    spec module {
+        pragma verify;
+    }
 
     /// The type tag representing the `LBR` currency on-chain.
     resource struct LBR { }
@@ -34,6 +40,10 @@ module LBR {
         ratio: FixedPoint32,
         /// Holds the `CoinType` backing coins for the on-chain reserve.
         backing: Libra<CoinType>
+    }
+    spec struct ReserveComponent {
+        // The ratio cannot be zero.
+        invariant !FixedPoint32::is_zero(ratio);
     }
 
     /// The on-chain reserve for the `LBR` holds both the capability for minting `LBR`
@@ -59,7 +69,22 @@ module LBR {
         coin2: ReserveComponent<Coin2>,
     }
 
-    const EINVALID_SINGLETON_ADDRESS: u64 = 0;
+    /// Global invariant that the Reserve resource exists after genesis.
+    spec module {
+        invariant [global] LibraTimestamp::is_operating() ==> reserve_exists() && Libra::is_currency<LBR>();
+
+        define reserve_exists(): bool {
+           exists<Reserve>(CoreAddresses::CURRENCY_INFO_ADDRESS())
+        }
+    }
+
+    /// TODO(wrwg): This should be provided somewhere centrally in the framework.
+    const MAX_U64: u64 = 18446744073709551615;
+
+    const ERESERVE: u64 = 0;
+    const ECOIN1: u64 = 1;
+    const ECOIN2: u64 = 2;
+    const EZERO_LBR_MINT_NOT_ALLOWED: u64 = 3;
 
     /// Initializes the `LBR` module. This sets up the initial `LBR` ratios and
     /// reserve components, and creates the mint, preburn, and burn
@@ -69,21 +94,23 @@ module LBR {
     /// correct permissions (`&Capability<RegisterNewCurrency>`). Both of these
     /// restrictions are enforced in the `Libra::register_currency` function, but also enforced here.
     public fun initialize(
-        association: &signer,
+        lr_account: &signer,
         tc_account: &signer,
     ) {
+        LibraTimestamp::assert_genesis();
         // Operational constraint
-        assert(Signer::address_of(association) == reserve_address(), EINVALID_SINGLETON_ADDRESS);
-        // Register the `LBR` currency.
+        CoreAddresses::assert_currency_info(lr_account);
+        // Reserve must not exist.
+        assert(!exists<Reserve>(CoreAddresses::LIBRA_ROOT_ADDRESS()), Errors::already_published(ERESERVE));
         let (mint_cap, burn_cap) = Libra::register_currency<LBR>(
-            association,
-            tc_account,
+            lr_account,
             FixedPoint32::create_from_rational(1, 1), // exchange rate to LBR
             true,    // is_synthetic
             1000000, // scaling_factor = 10^6
             1000,    // fractional_part = 10^3
             b"LBR"
         );
+        AccountLimits::publish_unrestricted_limits<LBR>(lr_account);
         let preburn_cap = Libra::create_preburn<LBR>(tc_account);
         let coin1 = ReserveComponent<Coin1> {
             ratio: FixedPoint32::create_from_rational(1, 2),
@@ -93,7 +120,7 @@ module LBR {
             ratio: FixedPoint32::create_from_rational(1, 2),
             backing: Libra::zero<Coin2>(),
         };
-        move_to(association, Reserve { mint_cap, burn_cap, preburn_cap, coin1, coin2 });
+        move_to(lr_account, Reserve { mint_cap, burn_cap, preburn_cap, coin1, coin2 });
     }
 
     /// Returns true if `CoinType` is `LBR::LBR`
@@ -102,70 +129,55 @@ module LBR {
             Libra::currency_code<CoinType>() == Libra::currency_code<LBR>()
     }
 
-    /// Given the constituent coins `coin1` and `coin2` of the `LBR`, this
-    /// function calculates the maximum amount of `LBR` that can be returned
-    /// for the values of the passed-in coins with respect to the coin ratios
-    /// that are specified in the respective currency's  `ReserveComponent`.
-    /// Any remaining amounts in the passed-in coins are returned back out
-    /// along with any newly-created `LBR` coins.
-    /// If either of the coin's values are less than or equal to 1, then the
-    /// function returns the passed-in coins along with zero `LBR`.
-    /// In order to ensure that the on-chain reserve remains liquid while
-    /// minimizing complexity, the values needed to create an `LBR` are the
-    /// truncated division of the passed-in coin with `1` base currency unit added.
-    /// This is different from rounding, or ceiling; e.g., `ceil(10 /
-    /// 2) = 5` whereas we would calculate this as `trunc(10/5) + 1 = 2 + 1 = 3`.
-    public fun swap_into(
-        coin1: Libra<Coin1>,
-        coin2: Libra<Coin2>
-    ): (Libra<LBR>, Libra<Coin1>, Libra<Coin2>)
+    spec fun is_lbr {
+        pragma verify = false, opaque = true;
+        /// The following is correct because currency codes are unique.
+        ensures result == spec_is_lbr<CoinType>();
+    }
+
+    /// Returns true if CoinType is LBR.
+    spec define spec_is_lbr<CoinType>(): bool {
+        type<CoinType>() == type<LBR>()
+    }
+
+    /// We take the truncated multiplication + 1 (not ceiling!) to withdraw for each currency that makes up the `LBR`.
+    /// We do this to ensure that the reserve is always positive. We could do this with other more complex methods such as
+    /// banker's rounding, but this adds considerable arithmetic complexity.
+    public fun calculate_component_amounts_for_lbr(amount_lbr: u64): (u64, u64)
     acquires Reserve {
-        // Grab the reserve
-        let reserve = borrow_global_mut<Reserve>(CoreAddresses::LIBRA_ROOT_ADDRESS());
-        let coin1_value = Libra::value(&coin1);
-        let coin2_value = Libra::value(&coin2);
-        // If either of the coin's values is <= 1, then we don't create any LBR
-        if (coin1_value <= 1 || coin2_value <= 1) return (Libra::zero<LBR>(), coin1, coin2);
-        let lbr_num_coin1 = FixedPoint32::divide_u64(coin1_value - 1, *&reserve.coin1.ratio);
-        let lbr_num_coin2 = FixedPoint32::divide_u64(coin2_value - 1, *&reserve.coin2.ratio);
-        // The number of `LBR` that can be minted is the minimum of the amount
-        // that could be possibly minted according to the value of the coin
-        // passed in and that coin's ratio in the reserve.
-        let num_lbr = if (lbr_num_coin2 < lbr_num_coin1) {
-            lbr_num_coin2
-        } else {
-            lbr_num_coin1
-        };
-        create(num_lbr, coin1, coin2)
+        LibraTimestamp::assert_operating();
+        let reserve = borrow_global<Reserve>(CoreAddresses::LIBRA_ROOT_ADDRESS());
+        let amount1 = FixedPoint32::multiply_u64(amount_lbr, *&reserve.coin1.ratio);
+        let amount2 = FixedPoint32::multiply_u64(amount_lbr, *&reserve.coin2.ratio);
+        assert(amount1 != MAX_U64, Errors::limit_exceeded(ECOIN1));
+        assert(amount2 != MAX_U64, Errors::limit_exceeded(ECOIN2));
+        (amount1 + 1, amount2 + 1)
     }
 
     /// Create `amount_lbr` number of `LBR` from the passed in coins. If
-    /// enough of each coin is passed in, this will return the `LBR` along with any
-    /// remaining balances in the passed in coins. If any of the
-    /// coins passed-in do not hold a large enough balance--which is calculated as
-    /// `truncate(amount_lbr * reserve_component_c_i.ratio) + 1` for each coin
-    /// `c_i` passed in--the function will abort.
+    /// enough of each coin is passed in, this will return the `LBR`.
+    /// * If the passed in coins are not the exact amount needed to mint `amount_lbr` LBR, the function will abort.
+    /// * If any of the coins passed-in do not hold a large enough balance--which is calculated as
+    ///   `truncate(amount_lbr * reserve_component_c_i.ratio) + 1` for each coin
+    ///   `c_i` passed in--the function will abort.
+    /// * If `amount_lbr` is zero the function will abort.
     public fun create(
         amount_lbr: u64,
         coin1: Libra<Coin1>,
         coin2: Libra<Coin2>
-    ): (Libra<LBR>, Libra<Coin1>, Libra<Coin2>)
+    ): Libra<LBR>
     acquires Reserve {
-        if (amount_lbr == 0) return (Libra::zero<LBR>(), coin1, coin2);
+        LibraTimestamp::assert_operating();
+        assert(amount_lbr > 0, Errors::invalid_argument(EZERO_LBR_MINT_NOT_ALLOWED));
+        let (num_coin1, num_coin2) = calculate_component_amounts_for_lbr(amount_lbr);
         let reserve = borrow_global_mut<Reserve>(CoreAddresses::LIBRA_ROOT_ADDRESS());
-        // We take the truncated multiplication + 1 (not ceiling!) to withdraw for each currency.
-        // This is because we want to ensure that the reserve is always
-        // positive. We could do this with other more complex methods such as
-        // bankers rounding, but this adds considerable arithmetic complexity.
-        let num_coin1 = 1 + FixedPoint32::multiply_u64(amount_lbr, *&reserve.coin1.ratio);
-        let num_coin2 = 1 + FixedPoint32::multiply_u64(amount_lbr, *&reserve.coin2.ratio);
-        let coin1_exact = Libra::withdraw(&mut coin1, num_coin1);
-        let coin2_exact = Libra::withdraw(&mut coin2, num_coin2);
+        assert(num_coin1 == Libra::value(&coin1), Errors::invalid_argument(ECOIN1));
+        assert(num_coin2 == Libra::value(&coin2), Errors::invalid_argument(ECOIN2));
         // Deposit the coins in to the reserve
-        Libra::deposit(&mut reserve.coin1.backing, coin1_exact);
-        Libra::deposit(&mut reserve.coin2.backing, coin2_exact);
+        Libra::deposit(&mut reserve.coin1.backing, coin1);
+        Libra::deposit(&mut reserve.coin2.backing, coin2);
         // Once the coins have been deposited in the reserve, we can mint the LBR
-        (Libra::mint_with_capability<LBR>(amount_lbr, &reserve.mint_cap), coin1, coin2)
+        Libra::mint_with_capability<LBR>(amount_lbr, &reserve.mint_cap)
     }
 
     /// Unpacks an `LBR` coin, and returns the backing coins that make up the
@@ -178,16 +190,46 @@ module LBR {
     /// would be `6` and `3` for `Coin1` and `Coin2` respectively.
     public fun unpack(coin: Libra<LBR>): (Libra<Coin1>, Libra<Coin2>)
     acquires Reserve {
-        let reserve = borrow_global_mut<Reserve>(CoreAddresses::LIBRA_ROOT_ADDRESS());
+        LibraTimestamp::assert_operating();
+        let reserve = borrow_global_mut<Reserve>(reserve_address());
         let ratio_multiplier = Libra::value(&coin);
         let sender = reserve_address();
-        Libra::preburn_with_resource(coin, &mut reserve.preburn_cap, sender);
-        Libra::burn_with_resource_cap(&mut reserve.preburn_cap, sender, &reserve.burn_cap);
+        Libra::burn_now(coin, &mut reserve.preburn_cap, sender, &reserve.burn_cap);
         let coin1_amount = FixedPoint32::multiply_u64(ratio_multiplier, *&reserve.coin1.ratio);
         let coin2_amount = FixedPoint32::multiply_u64(ratio_multiplier, *&reserve.coin2.ratio);
         let coin1 = Libra::withdraw(&mut reserve.coin1.backing, coin1_amount);
         let coin2 = Libra::withdraw(&mut reserve.coin2.backing, coin2_amount);
         (coin1, coin2)
+    }
+    spec fun unpack {
+        pragma verify_duration_estimate = 100; // TODO: occasionally times out
+        include UnpackAbortsIf;
+        ensures Libra::spec_market_cap<LBR>() == old(Libra::spec_market_cap<LBR>()) - coin.value;
+        ensures result_1.value == spec_unpack_coin1(coin);
+        ensures result_2.value == spec_unpack_coin2(coin);
+    }
+    spec schema UnpackAbortsIf {
+        coin: Libra<LBR>;
+        include LibraTimestamp::AbortsIfNotOperating;
+        let reserve = global<Reserve>(reserve_address());
+        include Libra::BurnNowAbortsIf<LBR>{preburn: reserve.preburn_cap};
+        /// > TODO(wrwg): It appears the next couple of aborts inclusions are redundant, i.e. they can be
+        /// > removed but still no abort is reported. It is unclear why this is the case. For example,
+        /// > the coin value could be so larged that multiply overflows, or the reserve could not have backing.
+        //  > Need to investigate why this is the case. Notice that keeping them also does not produce an error,
+        /// > indicating the the solver determines their conditions can never become true.
+        include FixedPoint32::MultiplyAbortsIf{val: coin.value, multiplier: reserve.coin1.ratio};
+        include FixedPoint32::MultiplyAbortsIf{val: coin.value, multiplier: reserve.coin2.ratio};
+        include Libra::WithdrawAbortsIf<Coin1>{coin: reserve.coin1.backing, amount: spec_unpack_coin1(coin)};
+        include Libra::WithdrawAbortsIf<Coin2>{coin: reserve.coin2.backing, amount: spec_unpack_coin2(coin)};
+    }
+    spec define spec_unpack_coin1(coin: Libra<LBR>): u64 {
+        let reserve = global<Reserve>(reserve_address());
+        FixedPoint32::spec_multiply_u64(coin.value, reserve.coin1.ratio)
+    }
+    spec define spec_unpack_coin2(coin: Libra<LBR>): u64 {
+        let reserve = global<Reserve>(reserve_address());
+        FixedPoint32::spec_multiply_u64(coin.value, reserve.coin2.ratio)
     }
 
     /// Return the account address where the globally unique LBR::Reserve resource is stored
