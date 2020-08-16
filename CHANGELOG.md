@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/move-hub/tree-sitter-move/compare/v0.2.3...v0.2.4) (2020-08-16)
+
+### Features
+
+* support latest move syntax in libra#8926f107b38293a35cac499fcd0f5d568b3b5275
+
+### Bug Fixes
+
+* Remove some ugly code, clean parser syntax.
+
 ### [0.2.3](https://github.com/move-hub/tree-sitter-move/compare/v0.2.2...v0.2.3) (2020-07-12)
 
 

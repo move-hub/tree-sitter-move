@@ -1,6 +1,6 @@
 {
   "name": "@movei/tree-sitter-move",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "move grammar in tree-sitter",
   "publishConfig": {
     "access": "public",
